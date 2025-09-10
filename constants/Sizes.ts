@@ -1,0 +1,44 @@
+// constants/Sizes.ts
+// Définit des constantes de tailles pour le texte, les composants, les espacements, etc.
+
+const Sizes = {
+  FONT_SIZE_XS: 10,
+  FONT_SIZE_SM: 12,
+  FONT_SIZE_MD: 16,
+  FONT_SIZE_LG: 20,
+  FONT_SIZE_XL: 24,
+  FONT_SIZE_XXL: 32,
+
+  BUTTON_HEIGHT_SM: 32,
+  BUTTON_HEIGHT_MD: 40,
+  BUTTON_HEIGHT_LG: 48,
+  BUTTON_RADIUS: 30,
+
+  INPUT_HEIGHT: 44,
+  INPUT_RADIUS: 8,
+
+  ICON_SIZE_SM: 16,
+  ICON_SIZE_MD: 24,
+  ICON_SIZE_LG: 32,
+
+  SPACING_XXS: 2,
+  SPACING_XS: 4,
+  SPACING_SM: 8,
+  SPACING_MD: 16,
+  SPACING_LG: 24,
+  SPACING_XL: 32,
+  SPACING_XXL: 40,
+
+  CARD_RADIUS: 12,
+  CARD_ELEVATION: 2,
+
+  AVATAR_SIZE_SM: 32,
+  AVATAR_SIZE_MD: 48,
+  AVATAR_SIZE_LG: 64,
+
+  TAB_BAR_HEIGHT: 56,
+  HEADER_HEIGHT: 56,
+
+};
+
+export default Sizes;
