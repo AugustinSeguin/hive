@@ -58,7 +58,7 @@ const AddTaskScreen = () => {
               type === "one-shot" && themedStyles.typeTextActive,
             ]}
           >
-            One-shot
+            Ponctuelle
           </Text>
         </Pressable>
       </View>
@@ -82,7 +82,7 @@ const AddTaskScreen = () => {
       />
       {type === "recurring" && (
         <>
-          <Text style={themedStyles.label}>Tous les combien de jours ?</Text>
+          <Text style={themedStyles.label}>À quelle fréquence ?</Text>
           <View style={themedStyles.inputRow}>
             <TextInput
               style={[themedStyles.input, { flex: 1 }]}
@@ -148,7 +148,7 @@ const AddTaskScreen = () => {
       )}
       <ButtonComponent
         type="primary"
-        titre="Sauvegarder la Tâche"
+        titre="Ajouter la Tâche"
         action={() => {
           // Action de sauvegarde
         }}
