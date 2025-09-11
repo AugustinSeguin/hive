@@ -13,7 +13,6 @@ export default function LoginScreen() {
     const themeColors = Colors[colorScheme ?? "light"];
     const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
-    console.log(apiUrl);
     const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert("Erreur", "Veuillez remplir tous les champs");
