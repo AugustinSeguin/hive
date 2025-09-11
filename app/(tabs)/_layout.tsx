@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { Colors } from "../../constants/Colors";
+import { Colors } from "@/constants/Colors";
 import { Tabs } from "expo-router";
 
 export default function TabLayout() {
@@ -14,7 +14,7 @@ export default function TabLayout() {
 
                     if (route.name === "index") {
                         iconName = "list-outline";
-                    } else if (route.name === "ranking") {
+                    } else if (route.name === "leaderboard") {
                         iconName = "trophy-outline";
                     } else if (route.name === "household") {
                         iconName = "home-outline";
@@ -28,7 +28,7 @@ export default function TabLayout() {
             })}
         >
             <Tabs.Screen name="index" options={{ title: "Tâches" }} />
-            <Tabs.Screen name="ranking" options={{ title: "Classement" }} />
+            <Tabs.Screen name="leaderbord" options={{ title: "Classement" }} />
             <Tabs.Screen name="household" options={{ title: "Foyer" }} />
         </Tabs>
     );
