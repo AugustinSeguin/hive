@@ -1,75 +1,174 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { StyleSheet, SectionList } from "react-native";
+import { ThemedText } from "@/components/ThemedText";
+import { SafeAreaView } from "react-native-safe-area-context";
+import TaskComponent from "@/components/TaskComponent";
+import ButtonComponent from "@/components/ButtonComponent";
+import type { TaskProps } from "@/components/TaskComponent";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+// Fake data for TaskComponent
+const fakeTasks: TaskProps[] = [
+  {
+    dueDateStatus: "late",
+    action: () => console.log("task done: Nettoyer la salle de bain"),
+    titre: "Nettoyer la salle de bain",
+    dueDate: "2025-09-10",
+    done: false,
+  },
+  {
+    dueDateStatus: "late",
+    action: () => console.log("task done: Sortir les poubelles"),
+    titre: "Sortir les poubelles",
+    dueDate: "2025-09-08",
+    done: true,
+  },
+  {
+    dueDateStatus: "soon",
+    action: () => console.log("task done: Faire la lessive"),
+    titre: "Faire la lessive",
+    dueDate: "2025-09-12",
+    done: false,
+  },
+  {
+    dueDateStatus: "soon",
+    action: () => console.log("task done: Passer l'aspirateur"),
+    titre: "Passer l'aspirateur",
+    dueDate: "2025-09-13",
+    done: false,
+  },
+  {
+    dueDateStatus: "currentWeek",
+    action: () => console.log("task done: Arroser les plantes"),
+    titre: "Arroser les plantes",
+    dueDate: "2025-09-15",
+    done: false,
+  },
+  {
+    dueDateStatus: "currentWeek",
+    action: () => console.log("task done: Faire les courses"),
+    titre: "Faire les courses",
+    dueDate: "2025-09-16",
+    done: false,
+  },
+  {
+    dueDateStatus: "later",
+    action: () => console.log("task done: Nettoyer le garage"),
+    titre: "Nettoyer le garage",
+    dueDate: "2025-09-25",
+    done: false,
+  },
+  {
+    dueDateStatus: "later",
+    action: () => console.log("task done: Laver la voiture"),
+    titre: "Laver la voiture",
+    dueDate: "2025-09-28",
+    done: false,
+  },
+];
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+// Helper pour filtrer les tâches par date
+function filterTasksByDate(tasks: TaskProps[]) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const lateTasks: TaskProps[] = [];
+  const soonTasks: TaskProps[] = [];
+  const currentWeekTasks: TaskProps[] = [];
+  const laterTasks: TaskProps[] = [];
+
+  for (const task of tasks) {
+    if (!task.dueDate) continue;
+    const dueDate = new Date(task.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    const diffDays = Math.round(
+      (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (diffDays < 0) {
+      lateTasks.push(task);
+    } else if (diffDays === 0 || diffDays === 1) {
+      soonTasks.push(task);
+    } else if (diffDays > 1 && diffDays <= 7) {
+      currentWeekTasks.push(task);
+    } else if (diffDays > 7) {
+      laterTasks.push(task);
+    }
+  }
+  return { lateTasks, soonTasks, currentWeekTasks, laterTasks };
 }
 
+export default function HomeScreen() {
+  const [lateTasks, setLateTasks] = useState<TaskProps[]>([]);
+  const [soonTasks, setSoonTasks] = useState<TaskProps[]>([]);
+  const [currentWeekTasks, setCurrentWeekTasks] = useState<TaskProps[]>([]);
+  const [laterTasks, setLaterTasks] = useState<TaskProps[]>([]);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      let tasks = fakeTasks.sort((a, b) => {
+        if (a.dueDate && b.dueDate) {
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        }
+        return 0;
+      });
+      const { lateTasks, soonTasks, currentWeekTasks, laterTasks } =
+        filterTasksByDate(tasks);
+      setLateTasks(lateTasks);
+      setSoonTasks(soonTasks);
+      setCurrentWeekTasks(currentWeekTasks);
+      setLaterTasks(laterTasks);
+    };
+    fetchTasks();
+  }, []);
+
+  const sections = [
+    { title: "En retard", data: lateTasks },
+    { title: "Proche échéance", data: soonTasks },
+    { title: "Cette semaine", data: currentWeekTasks },
+    { title: "Ce mois", data: laterTasks },
+  ].filter((section) => section.data.length > 0);
+
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      <ThemedText style={styles.headerTitle}>Liste des tâches</ThemedText>
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.titre + "-" + item.dueDate}
+        renderItem={({ item }) => <TaskComponent {...item} />}
+        renderSectionHeader={({ section }) => (
+          <ThemedText style={styles.sectionHeader}>{section.title}</ThemedText>
+        )}
+      />
+      <ButtonComponent
+        type="secondary"
+        titre="+"
+        action={() => {
+          // Action d'ajout de tâche
+          console.log("Ajout d'une tâche");
+        }}
+        style={styles.floatingButton}
+      />
+    </SafeAreaView>
+  );
+}
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginVertical: 16,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  sectionHeader: {
+    fontSize: 20,
+    fontWeight: "600",
+    backgroundColor: "transparent",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  floatingButton: {
+    position: "absolute",
+    right: 24,
+    bottom: 32,
+    zIndex: 10,
+    elevation: 10,
   },
 });
