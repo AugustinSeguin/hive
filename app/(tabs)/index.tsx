@@ -129,7 +129,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ThemedText style={styles.headerTitle}>Mes Tâches</ThemedText>
+      <ThemedText style={styles.headerTitle}>Liste des tâches</ThemedText>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.titre + "-" + item.dueDate}
