@@ -39,16 +39,19 @@ function getBorderColor(
 
 function getDueDateText(dueDateStr?: string): string | null {
   if (!dueDateStr) return null;
-  const today = new Date();
-  const dueDate = new Date(dueDateStr);
-  today.setHours(0, 0, 0, 0);
-  dueDate.setHours(0, 0, 0, 0);
-  const diffTime = dueDate.getTime() - today.getTime();
+  const today = new Date().setHours(0, 0, 0, 0);
+  const dueDate = new Date(dueDateStr).setHours(0, 0, 0, 0);
+  const diffTime = dueDate - today;
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-  if (diffDays <= 0) return "Aujourd'hui";
-  if (diffDays === 1) return "Demain";
-  if (diffDays > 1) return `Dans ${diffDays} jours`;
-  if (diffDays === -1) return "Hier";
+  if (diffDays <= 0) {
+    return "Aujourd'hui";
+  }
+  if (diffDays === 1) {
+    return "Demain";
+  }
+  if (diffDays > 1) {
+    return `Dans ${diffDays} jours`;
+  }
   return null;
 }
 
