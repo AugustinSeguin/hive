@@ -3,6 +3,7 @@ import { StyleSheet, SectionList } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TaskComponent from "@/components/TaskComponent";
+import ButtonComponent from "@/components/ButtonComponent";
 import type { TaskProps } from "@/components/TaskComponent";
 
 // Fake data for TaskComponent
@@ -137,6 +138,15 @@ export default function HomeScreen() {
           <ThemedText style={styles.sectionHeader}>{section.title}</ThemedText>
         )}
       />
+      <ButtonComponent
+        type="secondary"
+        titre="+"
+        action={() => {
+          // Action d'ajout de tâche
+          console.log("Ajout d'une tâche");
+        }}
+        style={styles.floatingButton}
+      />
     </SafeAreaView>
   );
 }
@@ -153,5 +163,12 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     paddingVertical: 8,
     paddingHorizontal: 16,
+  },
+  floatingButton: {
+    position: "absolute",
+    right: 24,
+    bottom: 32,
+    zIndex: 10,
+    elevation: 10,
   },
 });

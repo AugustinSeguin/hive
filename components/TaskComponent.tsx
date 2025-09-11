@@ -112,6 +112,7 @@ function getStyles(colorScheme: "light" | "dark") {
   });
 }
 
+
 const TaskComponent: React.FC<TaskProps> = ({
   action,
   titre,
@@ -123,6 +124,7 @@ const TaskComponent: React.FC<TaskProps> = ({
   const styles = getStyles(colorScheme);
   const borderColor = getBorderColor(dueDateStatus, colorScheme);
   const dueDateText = getDueDateText(dueDate);
+  
   return (
     <TouchableOpacity
       onPress={action}
