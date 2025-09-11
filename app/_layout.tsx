@@ -16,7 +16,7 @@ export default function RootLayout() {
 
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-                <Stack.Screen name="taskCreation" options={{ title: "Nouvelle tâche" }} />
+                <Stack.Screen name="addTask" options={{ title: "Nouvelle tâche" }} />
                 <Stack.Screen name="settings" options={{ title: "Paramètres" }} />
 
                 <Stack.Screen name="+not-found" />

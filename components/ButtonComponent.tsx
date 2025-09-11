@@ -4,6 +4,8 @@ import {
   Text,
   TouchableOpacity,
   useColorScheme,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { Colors } from "../constants/Colors";
 import Sizes from "../constants/Sizes";
