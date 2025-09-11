@@ -1,12 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { Colors } from "../../constants/Colors";
 import { Tabs } from "expo-router";
 
 export default function TabLayout() {
+    const colorScheme = useColorScheme();
+
     return (
         <Tabs
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ color, size }) => {
-                    let iconName;
+                    let iconName: keyof typeof Ionicons.glyphMap;
 
                     if (route.name === "index") {
                         iconName = "list-outline";
@@ -18,8 +22,8 @@ export default function TabLayout() {
 
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
-                tabBarActiveTintColor: "#1d4ed8", // à modifier quand on aura la maquette finale
-                tabBarInactiveTintColor: "gray", // à modifier quand on aura la maquette finale
+                tabBarActiveTintColor: Colors[colorScheme ?? "light"].tabIconSelected,
+                tabBarInactiveTintColor: Colors[colorScheme ?? "light"].tabIconDefault,
                 headerShown: false,
             })}
         >
