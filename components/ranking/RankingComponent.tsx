@@ -9,7 +9,8 @@ import {
     SafeAreaView,
     useColorScheme,
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { Colors } from '@/constants/Colors';
+import Sizes from '@/constants/Sizes';
 
 const DEFAULT_DATA = [
     { id: '1', name: 'Lisa', points: 1420, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Lisa' },
@@ -61,14 +62,14 @@ const styles = (theme: typeof Colors.light | typeof Colors.dark) =>
             backgroundColor: theme.background,
         },
         listContent: {
-            paddingVertical: 8,
+            paddingVertical: Sizes.SPACING_SM,
         },
         row: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            paddingVertical: 12,
-            paddingHorizontal: 16,
+            paddingVertical: Sizes.SPACING_SM,
+            paddingHorizontal: Sizes.SPACING_MD,
         },
         left: {
             flexDirection: 'row',
@@ -76,18 +77,18 @@ const styles = (theme: typeof Colors.light | typeof Colors.dark) =>
             flex: 1,
         },
         rank: {
-            width: 28,
+            width: Sizes.SPACING_XL,
             textAlign: 'center',
             fontWeight: '700',
-            fontSize: 16,
+            fontSize: Sizes.FONT_SIZE_MD,
             color: theme.muted,
-            marginRight: 8,
+            marginRight: Sizes.SPACING_SM,
         },
         avatar: {
-            width: 48,
-            height: 48,
-            borderRadius: 24,
-            marginRight: 12,
+            width: Sizes.AVATAR_SIZE_MD,
+            height: Sizes.AVATAR_SIZE_MD,
+            borderRadius: Sizes.AVATAR_SIZE_MD / 2,
+            marginRight: Sizes.SPACING_SM,
             backgroundColor: theme.avatarBg,
         },
         nameWrap: {
@@ -95,27 +96,27 @@ const styles = (theme: typeof Colors.light | typeof Colors.dark) =>
             justifyContent: 'center',
         },
         name: {
-            fontSize: 16,
+            fontSize: Sizes.FONT_SIZE_MD,
             fontWeight: '600',
             color: theme.text,
         },
         pointsWrap: {
             alignItems: 'flex-end',
-            marginLeft: 12,
-            minWidth: 64,
+            marginLeft: Sizes.SPACING_MD,
+            minWidth: Sizes.SPACING_XXL + Sizes.SPACING_XL,
         },
         points: {
-            fontSize: 16,
+            fontSize: Sizes.FONT_SIZE_MD,
             fontWeight: '700',
             color: theme.text,
         },
         pointsLabel: {
-            fontSize: 12,
+            fontSize: Sizes.FONT_SIZE_SM,
             color: theme.secondary,
         },
         sep: {
             height: StyleSheet.hairlineWidth,
             backgroundColor: theme.separator,
-            marginLeft: 56,
+            marginLeft: Sizes.SPACING_XL + Sizes.SPACING_SM,
         },
     });
