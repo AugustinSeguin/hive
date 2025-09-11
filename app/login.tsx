@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "reac
 import { Colors } from "@/constants/Colors";
 import Sizes from "@/constants/Sizes";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ import du router
 
 export default function LoginScreen() {
     const [email, setEmail] = useState("");
@@ -11,6 +13,7 @@ export default function LoginScreen() {
     const themeColors = Colors[colorScheme ?? "light"];
     const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
+    console.log(apiUrl);
     const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert("Erreur", "Veuillez remplir tous les champs");
@@ -32,12 +35,13 @@ export default function LoginScreen() {
             }
 
             const data = await response.json();
-            Alert.alert("Succès", `Connexion OK !\nToken : ${data.token || "pas de token"}`);
+            await AsyncStorage.setItem("userToken", data.token);
+
+            router.replace("/");
         } catch (error: any) {
             Alert.alert("Erreur API", error.message);
         }
     };
-
 
     return (
         <View style={[styles.container, { backgroundColor: themeColors.background }]}>
