@@ -10,7 +10,6 @@ import {
 import { Colors } from "../constants/Colors";
 import Sizes from "../constants/Sizes";
 
-import type { StyleProp, ViewStyle } from "react-native";
 type ButtonProps = {
   type: "primary" | "secondary";
   action: () => void;
