@@ -13,6 +13,8 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import Sizes from "@/constants/Sizes";
 import { Colors } from "@/constants/Colors";
 import ButtonComponent from "@/components/ButtonComponent";
+import { router } from "expo-router";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const AddTaskScreen = () => {
   const [type, setType] = useState<"recurring" | "one-shot">("one-shot");
@@ -25,6 +27,31 @@ const AddTaskScreen = () => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
   const themedStyles = getThemedStyles(theme);
+
+  async function handleSaveTask() {
+    const URL = API_URL + "/tasks";
+    const payload = {
+      titre: name,
+      description,
+      type,
+      dueDate: type === "one-shot" ? dueDate : null,
+      recurringDays: type === "recurring" ? recurringDays : null,
+    };
+    try {
+      const response = await fetch(URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (response.ok) {
+        router.push("/");
+        return;
+      }
+      throw new Error("Erreur lors de la création de la tâche");
+    } catch (e) {
+      console.error("Erreur lors de la création de la tâche", e);
+    }
+  }
 
   return (
     <View style={themedStyles.container}>
@@ -149,9 +176,7 @@ const AddTaskScreen = () => {
       <ButtonComponent
         type="primary"
         titre="Ajouter la Tâche"
-        action={() => {
-          // Action de sauvegarde
-        }}
+        action={handleSaveTask}
         style={themedStyles.saveButton}
       />
     </View>
@@ -167,12 +192,6 @@ function getThemedStyles(theme: typeof Colors.light) {
       borderTopRightRadius: Sizes.CARD_RADIUS_LG,
       padding: Sizes.SPACING_LG,
       paddingTop: Sizes.SPACING_LG,
-    },
-    title: {
-      fontSize: Sizes.FONT_SIZE_XL,
-      fontWeight: "bold",
-      textAlign: "center",
-      marginBottom: Sizes.SPACING_LG,
     },
     typeRow: {
       flexDirection: "row",
@@ -190,7 +209,7 @@ function getThemedStyles(theme: typeof Colors.light) {
     },
     typeButtonActive: {
       backgroundColor: theme.background,
-      borderColor: theme.lateTask,
+      borderColor: theme.tint,
     },
     typeText: {
       color: theme.secondary,
@@ -198,7 +217,7 @@ function getThemedStyles(theme: typeof Colors.light) {
       fontSize: Sizes.FONT_SIZE_MD,
     },
     typeTextActive: {
-      color: theme.lateTask,
+      color: theme.tint,
     },
     label: {
       fontWeight: "600",
@@ -230,7 +249,7 @@ function getThemedStyles(theme: typeof Colors.light) {
     saveButton: {
       marginTop: Sizes.SPACING_XL,
       borderRadius: Sizes.BUTTON_RADIUS,
-      backgroundColor: theme.lateTask,
+      backgroundColor: theme.tint,
       alignSelf: "center",
       width: "100%",
     },

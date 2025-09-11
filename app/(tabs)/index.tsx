@@ -5,6 +5,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import TaskComponent from "@/components/TaskComponent";
 import ButtonComponent from "@/components/ButtonComponent";
 import type { TaskProps } from "@/components/TaskComponent";
+import { router } from "expo-router";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // Fake data for TaskComponent
 const fakeTasks: TaskProps[] = [
@@ -103,19 +105,28 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const fetchTasks = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      let tasks = fakeTasks.sort((a, b) => {
-        if (a.dueDate && b.dueDate) {
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-        }
-        return 0;
-      });
-      const { lateTasks, soonTasks, currentWeekTasks, laterTasks } =
-        filterTasksByDate(tasks);
-      setLateTasks(lateTasks);
-      setSoonTasks(soonTasks);
-      setCurrentWeekTasks(currentWeekTasks);
-      setLaterTasks(laterTasks);
+      const URL = API_URL + "/tasks";
+      try {
+        const response = await fetch(URL);
+        if (!response.ok) throw new Error("Erreur lors du fetch des tâches");
+        const tasks: TaskProps[] = await response.json();
+        tasks.sort((a, b) => {
+          if (a.dueDate && b.dueDate) {
+            return (
+              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+            );
+          }
+          return 0;
+        });
+        const { lateTasks, soonTasks, currentWeekTasks, laterTasks } =
+          filterTasksByDate(tasks);
+        setLateTasks(lateTasks);
+        setSoonTasks(soonTasks);
+        setCurrentWeekTasks(currentWeekTasks);
+        setLaterTasks(laterTasks);
+      } catch (e) {
+        console.error(e);
+      }
     };
     fetchTasks();
   }, []);
@@ -129,7 +140,6 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ThemedText style={styles.headerTitle}>Liste des tâches</ThemedText>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.titre + "-" + item.dueDate}
@@ -142,8 +152,7 @@ export default function HomeScreen() {
         type="secondary"
         titre="+"
         action={() => {
-          // Action d'ajout de tâche
-          console.log("Ajout d'une tâche");
+          router.push("/addTask");
         }}
         style={styles.floatingButton}
       />
