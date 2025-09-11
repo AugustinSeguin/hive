@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Animated, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Animated, Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -45,7 +45,7 @@ export default function SecretGiftComponent() {
         try {
             await AsyncStorage.setItem(STORAGE_KEY, gift);
             setSaved(true);
-            setModalVisible(false); // fermer la pop-up après sauvegarde
+            setModalVisible(false);
             setTimeout(() => setSaved(false), 2000);
         } catch (e) {
             console.error('Erreur d\'enregistrement du cadeau :', e);
@@ -83,7 +83,10 @@ export default function SecretGiftComponent() {
                 animationType="fade"
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView
+                    style={styles.modalOverlay}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                >
                     <View style={[styles.modalContent, { backgroundColor: theme.background, borderColor: theme.tint }]}>
                         <Text style={[styles.label, { color: theme.text }]}>
                             Choisissez votre cadeau :
@@ -107,14 +110,11 @@ export default function SecretGiftComponent() {
                                 multiline
                                 numberOfLines={4}
                                 textAlignVertical="top"
+                                value={gift}
+                                onChangeText={setGift}
                             />
                         </Animated.View>
 
-                        {gift.trim() !== "" && (
-                            <Text style={[styles.currentGift, { color: theme.text }]}>
-                                Cadeau actuel : {gift}
-                            </Text>
-                        )}
                         <View style={styles.modalButtons}>
                             <TouchableOpacity
                                 onPress={() => setModalVisible(false)}
@@ -131,7 +131,7 @@ export default function SecretGiftComponent() {
                             </TouchableOpacity>
                         </View>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
         </View>
     );
@@ -199,11 +199,6 @@ const styles = StyleSheet.create({
         minHeight: 100,
         paddingVertical: Sizes.SPACING_SM,
     },
-    currentGift: {
-        fontSize: Sizes.FONT_SIZE_MD,
-        fontStyle: 'italic',
-        marginTop: Sizes.SPACING_SM,
-    },
     modalButtons: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
@@ -225,17 +220,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-
     buttonContainer: {
         width: '100%',
-        borderRadius: Sizes.BUTTON_RADIUS / 2,
+        borderRadius: Sizes.BUTTON_RADIUS,
         overflow: 'hidden',
     },
     buttonGradient: {
-        paddingVertical: Sizes.SPACING_LG,
+        paddingVertical: Sizes.SPACING_LG * 1.5,
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 80,
+        minHeight: 100,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: Sizes.FONT_SIZE_LG,
+        fontWeight: '600',
+        maxWidth: '80%',
+        textAlign: 'left',
+        lineHeight: Sizes.FONT_SIZE_MD * 1.5,
+        flexWrap: 'wrap',
     },
     buttonContent: {
         flexDirection: 'row',
@@ -243,14 +246,5 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         width: '100%',
         paddingHorizontal: Sizes.SPACING_MD,
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: Sizes.FONT_SIZE_LG,
-        fontWeight: '600',
-        maxWidth: '75%',
-        textAlign: 'left',
-        lineHeight: Sizes.FONT_SIZE_MD * 1.4,
-        flexWrap: 'wrap',
     },
 });

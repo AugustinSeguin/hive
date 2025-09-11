@@ -49,7 +49,6 @@ export default function RankingComponent({ data = DEFAULT_DATA }) {
                 keyExtractor={(item) => item.id}
                 renderItem={renderItem}
                 ItemSeparatorComponent={() => <View style={styles(theme).sep} />}
-                contentContainerStyle={styles(theme).listContent}
             />
         </SafeAreaView>
     );
@@ -59,14 +58,20 @@ const styles = (theme: typeof Colors.light | typeof Colors.dark) =>
     StyleSheet.create({
         container: {
             flex: 1,
+            flexGrow: 1,
+            width: '100%',
             backgroundColor: theme.background,
+            paddingVertical: Sizes.SPACING_MD,
+            paddingHorizontal: Sizes.SPACING_MD,
         },
         row: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            paddingVertical: Sizes.SPACING_SM,
+            paddingVertical: Sizes.SPACING_MD,
             paddingHorizontal: Sizes.SPACING_MD,
+            marginBottom: Sizes.SPACING_SM,
+            width: '100%',
         },
         left: {
             flexDirection: 'row',
@@ -101,6 +106,7 @@ const styles = (theme: typeof Colors.light | typeof Colors.dark) =>
             alignItems: 'flex-end',
             marginLeft: Sizes.SPACING_MD,
             minWidth: Sizes.SPACING_XXL + Sizes.SPACING_XL,
+            paddingRight: Sizes.SPACING_MD,
         },
         points: {
             fontSize: Sizes.FONT_SIZE_MD,
@@ -114,6 +120,6 @@ const styles = (theme: typeof Colors.light | typeof Colors.dark) =>
         sep: {
             height: StyleSheet.hairlineWidth,
             backgroundColor: theme.separator,
-            marginLeft: Sizes.SPACING_XL + Sizes.SPACING_SM,
+            marginHorizontal: Sizes.SPACING_MD,
         },
     });
