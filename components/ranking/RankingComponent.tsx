@@ -61,9 +61,6 @@ const styles = (theme: typeof Colors.light | typeof Colors.dark) =>
             flex: 1,
             backgroundColor: theme.background,
         },
-        listContent: {
-            paddingVertical: Sizes.SPACING_SM,
-        },
         row: {
             flexDirection: 'row',
             alignItems: 'center',
