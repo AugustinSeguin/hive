@@ -1,5 +1,12 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, useColorScheme } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useColorScheme,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import { Colors } from "../constants/Colors";
 import Sizes from "../constants/Sizes";
 
@@ -7,6 +14,7 @@ type ButtonProps = {
   type: "primary" | "secondary";
   action: () => void;
   titre: string;
+  style?: StyleProp<ViewStyle>;
 };
 
 const styles = StyleSheet.create({
@@ -61,11 +69,16 @@ function getButtonStyles(
   }
 }
 
-const ButtonComponent: React.FC<ButtonProps> = ({ action, titre, type }) => {
+const ButtonComponent: React.FC<ButtonProps> = ({
+  action,
+  titre,
+  type,
+  style,
+}) => {
   const colorScheme = useColorScheme();
   const { button, text } = getButtonStyles(type, colorScheme);
   return (
-    <TouchableOpacity onPress={action} style={button}>
+    <TouchableOpacity onPress={action} style={[button, style]}>
       <Text style={text}>{titre}</Text>
     </TouchableOpacity>
   );
