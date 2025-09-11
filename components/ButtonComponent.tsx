@@ -10,6 +10,7 @@ import {
 import { Colors } from "../constants/Colors";
 import Sizes from "../constants/Sizes";
 
+import type { StyleProp, ViewStyle } from "react-native";
 type ButtonProps = {
   type: "primary" | "secondary";
   action: () => void;
@@ -39,7 +40,7 @@ function getButtonStyles(
         paddingVertical: Sizes.SPACING_MD,
         paddingHorizontal: Sizes.SPACING_MD,
         marginHorizontal: Sizes.SPACING_LG,
-        backgroundColor: Colors[colorScheme ?? "light"].background,
+        backgroundColor: Colors[colorScheme ?? "light"].tint,
       },
       text: {
         ...styles.text,
@@ -51,9 +52,8 @@ function getButtonStyles(
     return {
       button: {
         ...styles.button,
-        backgroundColor: Colors[colorScheme ?? "light"].background,
+        backgroundColor: Colors[colorScheme ?? "light"].tint,
         borderWidth: 1,
-        borderColor: Colors[colorScheme ?? "light"].tint,
         borderRadius: size / 2,
         width: size,
         height: size,
@@ -62,7 +62,7 @@ function getButtonStyles(
       },
       text: {
         ...styles.text,
-        color: Colors[colorScheme ?? "light"].tint,
+        color: Colors[colorScheme ?? "light"].text,
         fontSize: Sizes.FONT_SIZE_SM,
       },
     };
