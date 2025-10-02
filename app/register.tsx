@@ -133,6 +133,15 @@ export default function LoginScreen() {
                     S'inscrire
                 </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.linkButton}
+                onPress={() => router.push("/login")}
+            >
+                <Text style={[styles.linkText, { color: themeColors.tint }]}>
+                    Déjà un compte ? Se connecter
+                </Text>
+            </TouchableOpacity>
         </KeyboardAvoidingView>
     );
 }
@@ -179,5 +188,12 @@ const styles = StyleSheet.create({
     buttonText: {
         fontWeight: "bold",
         fontSize: Sizes.FONT_SIZE_MD,
+    },
+    linkButton: {
+        marginTop: Sizes.SPACING_MD,
+    },
+    linkText: {
+        fontSize: Sizes.FONT_SIZE_SM,
+        fontWeight: "600",
     },
 });
