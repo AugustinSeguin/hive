@@ -15,6 +15,7 @@ import { Colors } from "@/constants/Colors";
 import ButtonComponent from "@/components/ButtonComponent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { SafeAreaFrameContext, SafeAreaView } from "react-native-safe-area-context";
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 function getXpFromDifficulty(
@@ -73,7 +74,7 @@ const AddTaskScreen = () => {
   }
 
   return (
-    <View style={themedStyles.container}>
+    <SafeAreaView style={themedStyles.container}>
       <View style={themedStyles.typeRow}>
         <Pressable
           style={[
@@ -262,7 +263,7 @@ const AddTaskScreen = () => {
         action={handleSaveTask}
         style={themedStyles.saveButton}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
