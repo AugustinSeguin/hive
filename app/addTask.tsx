@@ -13,6 +13,24 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import Sizes from "@/constants/Sizes";
 import { Colors } from "@/constants/Colors";
 import ButtonComponent from "@/components/ButtonComponent";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+function getXpFromDifficulty(
+  difficulty: "facile" | "moyen" | "difficile"
+): number {
+  switch (difficulty) {
+    case "facile":
+      return 10;
+    case "moyen":
+      return 50;
+    case "difficile":
+      return 100;
+    default:
+      return 10;
+  }
+}
 
 const AddTaskScreen = () => {
   const [type, setType] = useState<"recurring" | "one-shot">("one-shot");
@@ -21,10 +39,38 @@ const AddTaskScreen = () => {
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [recurringDays, setRecurringDays] = useState("");
+  const [difficulty, setDifficulty] = useState<
+    "facile" | "moyen" | "difficile"
+  >("moyen");
 
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
   const themedStyles = getThemedStyles(theme);
+
+  async function handleSaveTask() {
+    const newTask = {
+      repetition: type === "recurring" ? Number(recurringDays) || 1 : 1,
+      deactivated: false,
+      xp: getXpFromDifficulty(difficulty),
+      dueDateStatus: "late",
+      titre: name,
+      dueDate: dueDate ? dueDate.toISOString().split("T")[0] : undefined,
+      done: false,
+    };
+    try {
+      const cached = await AsyncStorage.getItem("tasks");
+      let tasks = [];
+      if (cached) {
+        tasks = JSON.parse(cached);
+      }
+
+      tasks.push(newTask);
+      await AsyncStorage.setItem("tasks", JSON.stringify(tasks));
+      router.push("/");
+    } catch (e) {
+      console.error("Erreur lors de la sauvegarde de la tâche", e);
+    }
+  }
 
   return (
     <View style={themedStyles.container}>
@@ -62,24 +108,6 @@ const AddTaskScreen = () => {
           </Text>
         </Pressable>
       </View>
-      <Text style={themedStyles.label}>Nom de la tâche</Text>
-      <TextInput
-        style={themedStyles.input}
-        placeholder="Ex: Sortir les poubelles"
-        value={name}
-        onChangeText={setName}
-        placeholderTextColor={theme.secondary}
-      />
-      <Text style={themedStyles.label}>Description</Text>
-      <TextInput
-        style={[themedStyles.input, themedStyles.textarea]}
-        placeholder="Ajouter des détails sur la tâche..."
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        numberOfLines={3}
-        placeholderTextColor={theme.secondary}
-      />
       {type === "recurring" && (
         <>
           <Text style={themedStyles.label}>À quelle fréquence ?</Text>
@@ -146,12 +174,92 @@ const AddTaskScreen = () => {
           </View>
         </>
       )}
+      <Text style={themedStyles.label}>Difficulté</Text>
+      <View style={themedStyles.inputRow}>
+        <TouchableOpacity
+          style={[
+            themedStyles.input,
+            {
+              flex: 1,
+              backgroundColor:
+                difficulty === "facile" ? theme.tint : theme.avatarBg,
+            },
+          ]}
+          onPress={() => setDifficulty("facile")}
+        >
+          <Text
+            style={{
+              color: difficulty === "facile" ? theme.background : theme.text,
+              textAlign: "center",
+            }}
+          >
+            Facile
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            themedStyles.input,
+            {
+              flex: 1,
+              backgroundColor:
+                difficulty === "moyen" ? theme.tint : theme.avatarBg,
+            },
+          ]}
+          onPress={() => setDifficulty("moyen")}
+        >
+          <Text
+            style={{
+              color: difficulty === "moyen" ? theme.background : theme.text,
+              textAlign: "center",
+            }}
+          >
+            Moyen
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            themedStyles.input,
+            {
+              flex: 1,
+              backgroundColor:
+                difficulty === "difficile" ? theme.tint : theme.avatarBg,
+            },
+          ]}
+          onPress={() => setDifficulty("difficile")}
+        >
+          <Text
+            style={{
+              color: difficulty === "difficile" ? theme.background : theme.text,
+              textAlign: "center",
+            }}
+          >
+            Difficile
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={themedStyles.label}>Nom de la tâche</Text>
+      <TextInput
+        style={themedStyles.input}
+        placeholder="Ex: Sortir les poubelles"
+        value={name}
+        onChangeText={setName}
+        placeholderTextColor={theme.secondary}
+      />
+      <Text style={themedStyles.label}>Description</Text>
+      <TextInput
+        style={[themedStyles.input, themedStyles.textarea]}
+        placeholder="Ajouter des détails sur la tâche..."
+        value={description}
+        onChangeText={setDescription}
+        multiline
+        numberOfLines={3}
+        placeholderTextColor={theme.secondary}
+      />
+
       <ButtonComponent
         type="primary"
         titre="Ajouter la Tâche"
-        action={() => {
-          // Action de sauvegarde
-        }}
+        action={handleSaveTask}
         style={themedStyles.saveButton}
       />
     </View>
@@ -167,12 +275,6 @@ function getThemedStyles(theme: typeof Colors.light) {
       borderTopRightRadius: Sizes.CARD_RADIUS_LG,
       padding: Sizes.SPACING_LG,
       paddingTop: Sizes.SPACING_LG,
-    },
-    title: {
-      fontSize: Sizes.FONT_SIZE_XL,
-      fontWeight: "bold",
-      textAlign: "center",
-      marginBottom: Sizes.SPACING_LG,
     },
     typeRow: {
       flexDirection: "row",
@@ -190,7 +292,7 @@ function getThemedStyles(theme: typeof Colors.light) {
     },
     typeButtonActive: {
       backgroundColor: theme.background,
-      borderColor: theme.lateTask,
+      borderColor: theme.tint,
     },
     typeText: {
       color: theme.secondary,
@@ -198,7 +300,7 @@ function getThemedStyles(theme: typeof Colors.light) {
       fontSize: Sizes.FONT_SIZE_MD,
     },
     typeTextActive: {
-      color: theme.lateTask,
+      color: theme.tint,
     },
     label: {
       fontWeight: "600",
@@ -230,7 +332,7 @@ function getThemedStyles(theme: typeof Colors.light) {
     saveButton: {
       marginTop: Sizes.SPACING_XL,
       borderRadius: Sizes.BUTTON_RADIUS,
-      backgroundColor: theme.lateTask,
+      backgroundColor: theme.tint,
       alignSelf: "center",
       width: "100%",
     },

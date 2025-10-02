@@ -10,7 +10,7 @@ export default function TabLayout() {
         <Tabs
             screenOptions={({ route }) => ({
                 tabBarIcon: ({ color, size }) => {
-                    let iconName: keyof typeof Ionicons.glyphMap;
+                    let iconName: keyof typeof Ionicons.glyphMap = "list-outline";
 
                     if (route.name === "index") {
                         iconName = "list-outline";
@@ -27,9 +27,9 @@ export default function TabLayout() {
                 headerShown: false,
             })}
         >
-            <Tabs.Screen name="index" options={{ title: "Tâches" }} />
-            <Tabs.Screen name="leaderbord" options={{ title: "Classement" }} />
-            <Tabs.Screen name="household" options={{ title: "Foyer" }} />
+            <Tabs.Screen name="index" options={{ title: "Liste des tâches", headerShown: true }} />
+            <Tabs.Screen name="leaderboard" options={{ title: "Classement", headerShown: true }} />
+            <Tabs.Screen name="household" options={{ title: "Foyer", headerShown: true }} />
         </Tabs>
     );
 }

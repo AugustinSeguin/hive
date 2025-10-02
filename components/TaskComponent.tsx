@@ -13,12 +13,18 @@ import Sizes from "../constants/Sizes";
 import { Ionicons } from "@expo/vector-icons";
 
 export type TaskProps = {
+  id?: number | undefined;
   dueDateStatus: "late" | "soon" | "currentWeek" | "later" | undefined;
   action: () => void;
   titre: string;
   dueDate: string | undefined;
   done?: boolean;
+  repetition?: number | undefined;
+  deactivated?: boolean;
+  xp?: number | undefined;
 };
+
+// title, repetition, dueDate, deactivated, xp,
 
 function getBorderColor(
   dueDateStatus: "late" | "soon" | "currentWeek" | "later" | undefined,
@@ -112,44 +118,73 @@ function getStyles(colorScheme: "light" | "dark") {
   });
 }
 
+const TaskComponent: React.FC<TaskProps> = React.memo(
+  ({ action, titre, dueDate, dueDateStatus, done, xp }) => {
+    const colorScheme = useColorScheme() ?? "light";
+    const styles = getStyles(colorScheme);
+    const borderColor = getBorderColor(dueDateStatus, colorScheme);
+    const dueDateText = getDueDateText(dueDate);
 
-const TaskComponent: React.FC<TaskProps> = ({
-  action,
-  titre,
-  dueDate,
-  dueDateStatus,
-  done,
-}) => {
-  const colorScheme = useColorScheme() ?? "light";
-  const styles = getStyles(colorScheme);
-  const borderColor = getBorderColor(dueDateStatus, colorScheme);
-  const dueDateText = getDueDateText(dueDate);
-  
-  return (
-    <TouchableOpacity
-      onPress={action}
-      style={[styles.card, { borderLeftColor: borderColor }]}
-      activeOpacity={0.8}
-    >
-      <View style={styles.content}>
-        <View style={styles.textContainer}>
-          <Text style={styles.title}>{titre}</Text>
-          {dueDateText && <Text style={styles.subtitle}>{dueDateText}</Text>}
-        </View>
-        <View style={styles.checkContainer}>
-          <View style={[styles.checkCircle, done && styles.checkCircleDone]}>
-            {done && (
-              <Ionicons
-                name="checkmark"
-                size={20}
-                color={Colors[colorScheme].tint}
-              />
-            )}
+    return (
+      <TouchableOpacity
+        onPress={action}
+        style={[
+          styles.card,
+          { borderLeftColor: borderColor },
+          done && { opacity: 0.5 },
+        ]}
+        activeOpacity={0.8}
+      >
+        <View style={styles.content}>
+          <View style={styles.textContainer}>
+            <Text style={styles.title}>{titre}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              {dueDateText && <Text style={styles.subtitle}>{dueDateText}</Text>}
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: Colors[colorScheme].tint,
+                  borderRadius: 8,
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  marginLeft: 8,
+                  alignSelf: "flex-start",
+                  backgroundColor:
+                    colorScheme === "dark" ? Colors.dark.background : "#fff",
+                }}
+              >
+                <Text
+                  style={{
+                    color: Colors[colorScheme].tint,
+                    fontWeight: "bold",
+                    fontSize: 12,
+                  }}
+                >
+                  {xp} xp
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.checkContainer}>
+            <View style={[styles.checkCircle, done && styles.checkCircleDone]}>
+              {done && (
+                <Ionicons
+                  name="checkmark"
+                  size={20}
+                  color={Colors[colorScheme].tint}
+                />
+              )}
+            </View>
           </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
-};
+      </TouchableOpacity>
+    );
+  },
+  (prevProps, nextProps) =>
+    prevProps.done === nextProps.done &&
+    prevProps.xp === nextProps.xp &&
+    prevProps.titre === nextProps.titre &&
+    prevProps.dueDate === nextProps.dueDate
+);
 
 export default TaskComponent;

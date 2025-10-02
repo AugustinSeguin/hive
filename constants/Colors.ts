@@ -2,21 +2,19 @@
  * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
  */
 
-const tintColorLight = "#0a7ea4";
-const tintColorDark = "#fff";
+const primary = "#ac68d3ff";
 const lateTask = "#FF3B30";
 const soonTask = "#FF9500";
 const currentWeekTask = "#44afcaff";
-const laterTask = "#ac68d3ff";
 
 export const Colors = {
     light: {
         text: '#11181C',
         background: '#fff',
-        tint: tintColorLight,
+        tint: primary,
         icon: '#687076',
         tabIconDefault: '#687076',
-        tabIconSelected: tintColorLight,
+        tabIconSelected: primary,
         muted: '#333',
         secondary: '#666',
         separator: '#eee',
@@ -24,15 +22,15 @@ export const Colors = {
         lateTask: lateTask,
         soonTask: soonTask,
         currentWeekTask: currentWeekTask,
-        laterTask: laterTask,
+        laterTask: primary,
     },
     dark: {
         text: '#ECEDEE',
         background: '#151718',
-        tint: tintColorDark,
+        tint: primary,
         icon: '#9BA1A6',
         tabIconDefault: '#9BA1A6',
-        tabIconSelected: tintColorDark,
+        tabIconSelected: primary,
         muted: '#ccc',
         secondary: '#aaa',
         separator: '#333',
@@ -40,6 +38,6 @@ export const Colors = {
         lateTask: lateTask,
         soonTask: soonTask,
         currentWeekTask: currentWeekTask,
-        laterTask: laterTask,
+        laterTask: primary,
     },
 };
