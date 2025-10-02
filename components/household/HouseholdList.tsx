@@ -7,7 +7,7 @@ import Sizes from '@/constants/Sizes';
 import { Feather } from '@expo/vector-icons';
 
 const defaultMembers = [
-    { id: '1', name: 'Lisa', role: 'Le Boss', points: 1420, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Lisa' },
+    { id: '1', name: 'Lisaa', role: 'Le Boss', points: 1420, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Lisa' },
     { id: '2', name: 'Tom', role: 'La Fée', points: 1350, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Tom' },
     { id: '3', name: 'Emilie', role: 'La Star', points: 1285, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Emilie' },
     { id: '4', name: 'Tim', role: "L'aventurier", points: 1200, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Tim' },

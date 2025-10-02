@@ -7,6 +7,7 @@ import { useRouter } from "expo-router";
 export default function Household() {
     const router = useRouter();
 
+
     return (
         <SafeAreaView style={styles.container}>
             <HouseholdList />
