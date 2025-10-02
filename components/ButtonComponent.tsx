@@ -75,9 +75,27 @@ const ButtonComponent: React.FC<ButtonProps> = ({
   style,
 }) => {
   const colorScheme = useColorScheme();
-  const { button, text } = getButtonStyles(type, colorScheme);
+  let { button, text } = getButtonStyles(type, colorScheme);
+
+  const isDanger = typeof titre === 'string' && titre.toLowerCase().includes('supprimer');
+  if (isDanger) {
+    button = {
+      ...styles.button,
+      paddingVertical: Sizes.SPACING_MD,
+      paddingHorizontal: Sizes.SPACING_MD,
+      marginHorizontal: Sizes.SPACING_LG,
+      borderRadius: Sizes.BUTTON_RADIUS,
+      backgroundColor: Colors[colorScheme ?? 'light'].lateTask,
+    };
+    text = {
+      ...styles.text,
+      color: '#fff',
+      fontSize: Sizes.FONT_SIZE_MD,
+    };
+  }
+  const combinedStyle = isDanger ? [style, button] : [button, style];
   return (
-    <TouchableOpacity onPress={action} style={[button, style]}>
+    <TouchableOpacity onPress={action} style={combinedStyle}>
       <Text style={text}>{titre}</Text>
     </TouchableOpacity>
   );
