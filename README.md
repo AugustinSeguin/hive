@@ -7,13 +7,20 @@
 
 ### Installation
 
-1. Installe les dépendances :
+**Installe les dépendances** 
+
+   ```sh
+# si pas installé : nvm install v20.19.5 
+nvm use
+   ```
+
+**Installe les dépendances** 
 
    ```sh
    npm install
    ```
 
-2. Configure les variables d'environnement :
+**Configure les variables d'environnement**
    ```sh
    cp .env.example .env
    # puis édite .env selon tes besoins
