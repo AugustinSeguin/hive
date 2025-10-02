@@ -5,6 +5,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import Sizes from '@/constants/Sizes';
 import { Feather } from '@expo/vector-icons';
+import EditHouseholdModal from "@/components/household/EditHousehold";
 
 const defaultMembers = [
     { id: '1', name: 'Lisaa', role: 'Le Boss', points: 1420, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Lisa' },
@@ -14,45 +15,131 @@ const defaultMembers = [
 ];
 
 export default function HouseholdList() {
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL;
     const [members, setMembers] = useState(defaultMembers);
+    const [householdId, setHouseholdId] = useState(null);
+    const [householdName, setHouseholdName] = useState(null);
+    const [avatarUri, setAvatarUri] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
+
     const colorScheme = useColorScheme();
     const theme = Colors[colorScheme ?? "light"];
 
-    const fetchMembers = async () => {
+    const fetchData = async () => {
         try {
-            const cached = await AsyncStorage.getItem("members");
-            if (cached) {
-                setMembers(JSON.parse(cached));
+            const token = await AsyncStorage.getItem("userToken");
+            const storedId = await AsyncStorage.getItem("householdId");
+
+            if (storedId) {
+                setHouseholdId(storedId);
+
+                const res = await fetch(`${apiUrl}/households/${storedId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    setHouseholdName(data.name);
+                    setAvatarUri(data.avatarUrl);
+
+                    await AsyncStorage.setItem("householdName", data.name);
+                    if (data.avatarUrl) await AsyncStorage.setItem("householdAvatar", data.avatarUrl);
+
+                    const formattedMembers = data.members.map((m) => ({
+                        id: m.id.toString(),
+                        name: m.pseudo,
+                        role: m.id === data.ownerId ? "Propriétaire" : "Membre",
+                        points: 0,
+                        avatar: m.avatarUrl || `https://api.dicebear.com/7.x/adventurer/png?seed=${m.pseudo}`,
+                    }));
+
+                    setMembers(formattedMembers);
+                    await AsyncStorage.setItem("members", JSON.stringify(formattedMembers));
+                }
             } else {
-                await AsyncStorage.setItem("members", JSON.stringify(defaultMembers));
                 setMembers(defaultMembers);
             }
         } catch (e) {
-            console.error("Erreur lors du chargement des membres", e);
+            console.error("Erreur lors du chargement des données", e);
         }
     };
 
     useEffect(() => {
-        fetchMembers();
+        fetchData();
     }, []);
+
+    const handleSaveHousehold = async ({ name, avatar }) => {
+        try {
+            const token = await AsyncStorage.getItem("userToken");
+
+            if (!householdId) {
+                // Création du foyer
+                const res = await fetch(`${apiUrl}/households`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ name, avatarUrl: avatar || "" }),
+                });
+                if (!res.ok) throw new Error("Erreur création foyer");
+                const data = await res.json();
+                setHouseholdId(data.id.toString());
+                await AsyncStorage.setItem("householdId", data.id.toString());
+            } else {
+                // Edition du foyer
+                const res = await fetch(`${apiUrl}/households/${householdId}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ name, avatarUrl: avatar || "" }),
+                });
+                if (!res.ok) throw new Error("Erreur édition foyer");
+            }
+
+            setHouseholdName(name);
+            setAvatarUri(avatar);
+            await AsyncStorage.setItem("householdName", name);
+            if (avatar) await AsyncStorage.setItem("householdAvatar", avatar);
+
+            fetchData();
+        } catch (e) {
+            console.error("Erreur lors de la sauvegarde/création du foyer", e);
+        }
+    };
+
+    const handleLeaveHousehold = async () => {
+        try {
+            const token = await AsyncStorage.getItem("userToken");
+            const res = await fetch(`${apiUrl}/households/${householdId}/leave`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error("Erreur quitter foyer");
+            await AsyncStorage.multiRemove(["householdId", "householdName", "householdAvatar"]);
+            setHouseholdId(null);
+            setHouseholdName(null);
+            setAvatarUri(null);
+            setMembers(defaultMembers);
+        } catch (e) {
+            console.error("Erreur quitter foyer", e);
+        }
+    };
 
     const renderMember = ({ item }) => (
         <View style={styles.memberCard}>
             <View style={styles.avatarPlaceholder}>
-                <Image
-                    source={{ uri: item.avatar }}
-                    style={{ width: 60, height: 60, borderRadius: 30 }}
-                />
+                <Image source={{ uri: item.avatar }} style={{ width: 60, height: 60, borderRadius: 30 }} />
+                {item.role === "Propriétaire" && (
+                    <View style={styles.ownerBadge}>
+                        <Feather name="award" size={14} color="#FFD700" />
+                    </View>
+                )}
             </View>
-
-            <Text style={[styles.memberName, { color: theme.text }]}>
-                {item.name}
-            </Text>
-
-            <Text style={[styles.memberRole, { color: theme.secondary }]}>
-                {item.role}
-            </Text>
-
+            <Text style={[styles.memberName, { color: theme.text }]}>{item.name}</Text>
+            <Text style={[styles.memberRole, { color: theme.secondary }]}>{item.role}</Text>
             <View style={styles.pointsBadge}>
                 <Feather name="star" size={12} color="#fff" />
                 <Text style={styles.pointsText}>{item.points} pts</Text>
@@ -63,21 +150,48 @@ export default function HouseholdList() {
     return (
         <>
             <View style={styles.header}>
-                <View style={styles.mainAvatar}>
-                    <Text style={{ fontSize: 50 }}>F</Text>
-                    <TouchableOpacity style={styles.editButton}>
-                        <Feather name="edit-2" size={16} color="#fff" />
-                    </TouchableOpacity>
-                </View>
-                <Text style={styles.householdName}>Nom du foyer</Text>
-                <Text style={[styles.membersCount, { color: theme.secondary }]}>
-                    {members.length} membres
-                </Text>
-                <TouchableOpacity style={styles.shareButton}>
-                    <Feather name="share-2" size={16} color="#000" />
-                    <Text style={styles.shareText}>Partager</Text>
-                </TouchableOpacity>
+                {householdId ? (
+                    <>
+                        <View style={styles.mainAvatar}>
+                            {avatarUri ? (
+                                <Image source={{ uri: avatarUri }} style={{ width: 100, height: 100, borderRadius: 50 }} />
+                            ) : (
+                                <Text style={{ fontSize: 50 }}>F</Text>
+                            )}
+                            <TouchableOpacity style={styles.editButton} onPress={() => setModalVisible(true)}>
+                                <Feather name="edit-2" size={16} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.householdName}>{householdName || "Nom du foyer"}</Text>
+                        <Text style={[styles.membersCount, { color: theme.secondary }]}>{members.length} membres</Text>
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                            <TouchableOpacity style={styles.shareButton}>
+                                <Feather name="share-2" size={16} color="#000" />
+                                <Text style={styles.shareText}>Partager</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.createButton, { backgroundColor: "#e74c3c" }]}
+                                onPress={handleLeaveHousehold}
+                            >
+                                <Feather name="log-out" size={16} color="#fff" />
+                                <Text style={styles.createButtonText}>Quitter le foyer</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </>
+                ) : (
+                    <>
+                        <Text style={styles.noHouseholdTitle}>Aucun foyer trouvé</Text>
+                        <Text style={styles.noHouseholdText}>
+                            Crée ton premier foyer pour commencer à gérer tes membres 🎉
+                        </Text>
+                        <TouchableOpacity style={styles.createButton} onPress={() => setModalVisible(true)}>
+                            <Feather name="plus-circle" size={18} color="#fff" />
+                            <Text style={styles.createButtonText}>Créer un foyer</Text>
+                        </TouchableOpacity>
+                    </>
+                )}
             </View>
+
             <FlatList
                 data={members}
                 renderItem={renderMember}
@@ -89,9 +203,18 @@ export default function HouseholdList() {
                     paddingHorizontal: Sizes.SPACING_MD,
                 }}
             />
+
+            <EditHouseholdModal
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                initialName={householdName || ""}
+                initialAvatar={avatarUri}
+                onSave={handleSaveHousehold}
+            />
         </>
     );
 }
+
 
 const styles = StyleSheet.create({
     header: {
@@ -107,6 +230,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         position: 'relative',
+        overflow: "hidden",
     },
     editButton: {
         position: 'absolute',
@@ -138,6 +262,32 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#000',
     },
+    noHouseholdTitle: {
+        fontSize: 22,
+        fontWeight: '700',
+        marginBottom: 8,
+        color: "#444",
+    },
+    noHouseholdText: {
+        fontSize: 14,
+        marginBottom: 12,
+        color: "#666",
+        textAlign: "center",
+        paddingHorizontal: 20,
+    },
+    createButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#27ae60",
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        gap: 8,
+    },
+    createButtonText: {
+        color: "#fff",
+        fontWeight: "600",
+    },
     memberCard: {
         width: '48%',
         alignItems: 'center',
@@ -160,6 +310,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: Sizes.SPACING_SM,
+    },
+    ownerBadge: {
+        position: "absolute",
+        bottom: -2,
+        right: -2,
+        backgroundColor: "#fff",
+        borderRadius: 10,
+        padding: 2,
+        borderWidth: 1,
+        borderColor: "#FFD700",
     },
     memberName: {
         fontWeight: '700',
