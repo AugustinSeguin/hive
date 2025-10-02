@@ -4,6 +4,9 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useEffect } from 'react';
+import { initNotifications, applyNotificationPreferences } from '@/services/notifications';
+import { applyBackgroundPreferences } from '@/services/background';
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -11,6 +14,14 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  useEffect(() => {
+    // Initialise notifications et applique les préférences (schedules + background fetch)
+    (async () => {
+      await initNotifications();
+      await applyNotificationPreferences();
+      await applyBackgroundPreferences();
+    })();
+  }, []);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -26,4 +37,6 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
+
+
 

@@ -7,6 +7,7 @@ import TaskComponent from "@/components/TaskComponent";
 import ButtonComponent from "@/components/ButtonComponent";
 import type { TaskProps } from "@/components/TaskComponent";
 import { router } from "expo-router";
+import { applyNotificationPreferences } from "@/services/notifications";
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // Fake data for TaskComponent
@@ -164,6 +165,12 @@ export default function HomeScreen() {
       setSoonTasks(soonTasks);
       setCurrentWeekTasks(currentWeekTasks);
       setLaterTasks(laterTasks);
+
+      try {
+        await applyNotificationPreferences(tasks);
+      } catch (e) {
+        console.warn('[notifications] apply preferences failed', e);
+      }
     } catch (e) {
       console.error(e);
     }
