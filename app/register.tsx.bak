@@ -6,6 +6,7 @@ import Sizes from "@/constants/Sizes";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+// Removed image picker: avatar is now provided via URL
 
 export default function RegisterScreen() {
   const [pseudo, setPseudo] = useState("");
@@ -18,8 +19,6 @@ export default function RegisterScreen() {
   const colorScheme = useColorScheme();
   const themeColors = Colors[colorScheme ?? "light"];
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-
-  const isValidUrl = (v: string) => /^https?:\/\//i.test(v.trim());
 
   const handleRegister = async () => {
     if (!pseudo || !email || !password) {
@@ -61,108 +60,108 @@ export default function RegisterScreen() {
     }
   };
 
+  const isValidUrl = (v: string) => /^https?:\/\//i.test(v.trim());
+
   return (
-    <>
-      <KeyboardAvoidingView style={[styles.container, { backgroundColor: themeColors.background }]}>
-        <Text style={[styles.title, { color: themeColors.text }]}>Inscription</Text>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: themeColors.background }]}>
+      <Text style={[styles.title, { color: themeColors.text }]}>Inscription</Text>
 
-        <View style={styles.avatarContainer}>
-          <TouchableOpacity
-            style={[styles.avatar, { borderColor: themeColors.separator }]}
-            onPress={() => { setAvatarInput(avatarUri); setUrlModalVisible(true); }}
-            accessibilityLabel="Saisir l'URL de l'avatar"
-          >
-            {isValidUrl(avatarUri) ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-            ) : (
-              <Ionicons name="person-circle-outline" size={28} color={themeColors.secondary} />
-            )}
-          </TouchableOpacity>
-        </View>
+      <View style={styles.avatarContainer}>
+        <TouchableOpacity
+          style={[styles.avatar, { borderColor: themeColors.separator }]}
+          onPress={() => { setAvatarInput(avatarUri); setUrlModalVisible(true); }}
+          accessibilityLabel="Saisir l'URL de l'avatar"
+        >
+          {isValidUrl(avatarUri) ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+          ) : (
+            <Ionicons name="person-circle-outline" size={28} color={themeColors.secondary} />
+          )}
+        </TouchableOpacity>
+      </View>
 
+      <TextInput
+        style={[styles.input, { borderColor: themeColors.separator, backgroundColor: themeColors.background, color: themeColors.text }]}
+        placeholder="Pseudo"
+        placeholderTextColor={themeColors.secondary}
+        autoCapitalize="none"
+        value={pseudo}
+        onChangeText={setPseudo}
+      />
+
+      <TextInput
+        style={[styles.input, { borderColor: themeColors.separator, backgroundColor: themeColors.background, color: themeColors.text }]}
+        placeholder="Adresse email"
+        placeholderTextColor={themeColors.secondary}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        value={email}
+        onChangeText={setEmail}
+      />
+
+      <View style={styles.inputWrapper}>
         <TextInput
-          style={[styles.input, { borderColor: themeColors.separator, backgroundColor: themeColors.background, color: themeColors.text }]}
-          placeholder="Pseudo"
+          style={[styles.input, { borderColor: themeColors.separator, backgroundColor: themeColors.background, color: themeColors.text, paddingRight: Sizes.SPACING_XL + 8 }]}
+          placeholder="Mot de passe"
           placeholderTextColor={themeColors.secondary}
-          autoCapitalize="none"
-          value={pseudo}
-          onChangeText={setPseudo}
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={setPassword}
         />
+        <TouchableOpacity
+          accessibilityLabel={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          onPress={() => setShowPassword((s) => !s)}
+          style={styles.eyeButton}
+        >
+          <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color={themeColors.secondary} />
+        </TouchableOpacity>
+      </View>
 
-        <TextInput
-          style={[styles.input, { borderColor: themeColors.separator, backgroundColor: themeColors.background, color: themeColors.text }]}
-          placeholder="Adresse email"
-          placeholderTextColor={themeColors.secondary}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-        />
+      <TouchableOpacity style={[styles.button, { backgroundColor: themeColors.tint, height: Sizes.BUTTON_HEIGHT_LG }]} onPress={handleRegister}>
+        <Text style={[styles.buttonText, { color: themeColors.background }]}>S'inscrire</Text>
+      </TouchableOpacity>
 
-        <View style={styles.inputWrapper}>
+      <TouchableOpacity style={styles.linkButton} onPress={() => router.push("/login")}>
+        <Text style={[styles.linkText, { color: themeColors.tint }]}>Déjà un compte ? Se connecter</Text>
+      </TouchableOpacity>
+    </KeyboardAvoidingView>
+    
+    <Modal transparent visible={urlModalVisible} animationType="fade" onRequestClose={() => setUrlModalVisible(false)}>
+      <View style={styles.modalBackdrop}>
+        <View style={[styles.modalCard, { backgroundColor: themeColors.background, borderColor: themeColors.separator }]}> 
+          <Text style={[styles.modalTitle, { color: themeColors.text }]}>URL de l'avatar</Text>
           <TextInput
-            style={[styles.input, { borderColor: themeColors.separator, backgroundColor: themeColors.background, color: themeColors.text, paddingRight: Sizes.SPACING_XL + 8 }]}
-            placeholder="Mot de passe"
+            style={[styles.modalInput, { borderColor: themeColors.separator, color: themeColors.text }]}
+            placeholder="https://..."
             placeholderTextColor={themeColors.secondary}
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={avatarInput}
+            onChangeText={setAvatarInput}
           />
-          <TouchableOpacity
-            accessibilityLabel={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-            onPress={() => setShowPassword((s) => !s)}
-            style={styles.eyeButton}
-          >
-            <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color={themeColors.secondary} />
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={[styles.button, { backgroundColor: themeColors.tint, height: Sizes.BUTTON_HEIGHT_LG }]} onPress={handleRegister}>
-          <Text style={[styles.buttonText, { color: themeColors.background }]}>S'inscrire</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.linkButton} onPress={() => router.push("/login")}>
-          <Text style={[styles.linkText, { color: themeColors.tint }]}>Déjà un compte ? Se connecter</Text>
-        </TouchableOpacity>
-      </KeyboardAvoidingView>
-
-      <Modal transparent visible={urlModalVisible} animationType="fade" onRequestClose={() => setUrlModalVisible(false)}>
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalCard, { backgroundColor: themeColors.background, borderColor: themeColors.separator }]}> 
-            <Text style={[styles.modalTitle, { color: themeColors.text }]}>URL de l'avatar</Text>
-            <TextInput
-              style={[styles.modalInput, { borderColor: themeColors.separator, color: themeColors.text }]}
-              placeholder="https://..."
-              placeholderTextColor={themeColors.secondary}
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={avatarInput}
-              onChangeText={setAvatarInput}
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={[styles.modalButton, { borderColor: themeColors.separator, marginRight: Sizes.SPACING_MD }]} onPress={() => setUrlModalVisible(false)}>
-                <Text style={{ color: themeColors.secondary }}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButtonPrimary, { backgroundColor: themeColors.tint }]}
-                onPress={() => {
-                  const trimmed = avatarInput.trim();
-                  const valid = /^https?:\/\//i.test(trimmed) || trimmed === "";
-                  if (!valid) {
-                    Alert.alert("URL invalide", "Veuillez saisir une URL http(s) valide ou laisser vide.");
-                    return;
-                  }
-                  setAvatarUri(trimmed);
-                  setUrlModalVisible(false);
-                }}
-              >
-                <Text style={{ color: themeColors.background, fontWeight: '600' }}>Enregistrer</Text>
-              </TouchableOpacity>
-            </View>
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={[styles.modalButton, { borderColor: themeColors.separator }]} onPress={() => setUrlModalVisible(false)}>
+              <Text style={{ color: themeColors.secondary }}>Annuler</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButtonPrimary, { backgroundColor: themeColors.tint }]}
+              onPress={() => {
+                const trimmed = avatarInput.trim();
+                const valid = /^https?:\/\//i.test(trimmed) || trimmed === "";
+                if (!valid) {
+                  Alert.alert("URL invalide", "Veuillez saisir une URL http(s) valide ou laisser vide.");
+                  return;
+                }
+                setAvatarUri(trimmed);
+                setUrlModalVisible(false);
+              }}
+            >
+              <Text style={{ color: themeColors.background, fontWeight: '600' }}>Enregistrer</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      </Modal>
-    </>
+      </View>
+    </Modal>
   );
 }
 
@@ -264,6 +263,7 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    gap: Sizes.SPACING_MD,
   },
   modalButton: {
     paddingHorizontal: Sizes.SPACING_MD,
@@ -277,4 +277,3 @@ const styles = StyleSheet.create({
     borderRadius: Sizes.BUTTON_RADIUS,
   },
 });
-
