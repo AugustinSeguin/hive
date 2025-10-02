@@ -1,15 +1,15 @@
-import { SafeAreaView, StyleSheet } from 'react-native';
-import Sizes from '@/constants/Sizes';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import {SafeAreaView, TouchableOpacity, StyleSheet} from 'react-native';
+import React from "react";
+import HouseholdList from "@/components/household/HouseholdList";
+import ButtonComponent from "@/components/ButtonComponent";
+import { useRouter } from "expo-router";
 
 export default function Household() {
-    const colorScheme = useColorScheme();
-    const theme = Colors[colorScheme ?? "light"];
+    const router = useRouter();
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-
+        <SafeAreaView style={styles.container}>
+            <HouseholdList />
         </SafeAreaView>
     );
 }
@@ -17,7 +17,7 @@ export default function Household() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingHorizontal: Sizes.SPACING_MD,
-        paddingTop: Sizes.SPACING_MD,
+        justifyContent: "space-between",
+        padding: 16,
     },
 });
