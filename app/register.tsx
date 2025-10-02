@@ -124,6 +124,9 @@ export default function RegisterScreen() {
         <TouchableOpacity style={styles.linkButton} onPress={() => router.push("/login")}>
           <Text style={[styles.linkText, { color: themeColors.tint }]}>Déjà un compte ? Se connecter</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.linkButton} onPress={() => router.replace('/(tabs)')}>
+          <Text style={[styles.linkText, { color: themeColors.tint }]}>Revenir à la liste des tâches</Text>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
 
       <Modal transparent visible={urlModalVisible} animationType="fade" onRequestClose={() => setUrlModalVisible(false)}>

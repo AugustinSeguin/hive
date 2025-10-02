@@ -136,6 +136,13 @@ export default function LoginScreen() {
                     Pas de compte ? Créer un compte
                 </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.linkButton}
+                onPress={() => router.replace('/(tabs)')}
+            >
+                <Text style={[styles.linkText, { color: themeColors.tint }]}>Revenir à la liste des tâches</Text>
+            </TouchableOpacity>
         </View>
     );
 }
