@@ -6,6 +6,7 @@ import { Colors } from '@/constants/Colors';
 import Sizes from '@/constants/Sizes';
 import { Feather } from '@expo/vector-icons';
 import EditHouseholdModal from "@/components/household/EditHousehold";
+import { router } from 'expo-router';
 
 const defaultMembers = [
     { id: '1', name: 'Lisaa', role: 'Le Boss', points: 1420, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Lisa' },
@@ -184,7 +185,7 @@ export default function HouseholdList() {
                         <Text style={styles.noHouseholdText}>
                             Crée ton premier foyer pour commencer à gérer tes membres 🎉
                         </Text>
-                        <TouchableOpacity style={styles.createButton} onPress={() => setModalVisible(true)}>
+                        <TouchableOpacity style={styles.createButton} onPress={async () => { try { const token = await AsyncStorage.getItem("userToken"); if (!token) { router.push('/login'); return; } setModalVisible(true); } catch { router.push('/login'); } }}>
                             <Feather name="plus-circle" size={18} color="#fff" />
                             <Text style={styles.createButtonText}>Créer un foyer</Text>
                         </TouchableOpacity>

@@ -16,7 +16,7 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   useEffect(() => {
-    // Initialise notifications et applique les pr�f�rences (schedules + background fetch)
+
     (async () => {
       await initNotifications();
       await applyNotificationPreferences();
@@ -31,7 +31,7 @@ export default function RootLayout() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
         <Stack.Screen name="addTask" options={{ title: 'Nouvelle tâche' }} />
-        <Stack.Screen name="editTask" options={{ title: 'Modifier la t�che' }} />
+        <Stack.Screen name="editTask" options={{ title: 'Modifier la tache' }} />
         <Stack.Screen name="settings" options={{ title: 'Paramètres' }} />
         <Stack.Screen name="+not-found" />
       </Stack>
