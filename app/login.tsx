@@ -39,6 +39,29 @@ export default function LoginScreen() {
             const data = await response.json();
             await AsyncStorage.setItem("userToken", data.token);
 
+            // Ensure we have a basic local profile for the header/profile screen
+            const existingProfile = await AsyncStorage.getItem("userProfile");
+            const serverUser = (data && (data.user || data.profile)) ?? null;
+            const profileToStore = serverUser
+                ? { pseudo: serverUser.pseudo || serverUser.username || undefined, email: serverUser.email || email }
+                : { email };
+
+            if (!existingProfile) {
+                await AsyncStorage.setItem("userProfile", JSON.stringify(profileToStore));
+            } else {
+                try {
+                    const parsed = JSON.parse(existingProfile);
+                    const updated = {
+                        ...parsed,
+                        email: parsed?.email ?? profileToStore.email,
+                        pseudo: parsed?.pseudo ?? profileToStore.pseudo,
+                    };
+                    await AsyncStorage.setItem("userProfile", JSON.stringify(updated));
+                } catch {
+                    await AsyncStorage.setItem("userProfile", JSON.stringify(profileToStore));
+                }
+            }
+
             router.replace("/");
         } catch (error: any) {
             Alert.alert("Erreur API", error.message);
@@ -112,6 +135,13 @@ export default function LoginScreen() {
                 <Text style={[styles.linkText, { color: themeColors.tint }]}>
                     Pas de compte ? Créer un compte
                 </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.linkButton}
+                onPress={() => router.replace('/(tabs)')}
+            >
+                <Text style={[styles.linkText, { color: themeColors.tint }]}>Revenir à la liste des tâches</Text>
             </TouchableOpacity>
         </View>
     );
