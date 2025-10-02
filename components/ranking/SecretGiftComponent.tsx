@@ -15,7 +15,7 @@ export default function SecretGiftComponent() {
     const [isFocused, setIsFocused] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const colorScheme = useColorScheme();
-    const theme = Colors[colorScheme];
+    const theme = Colors[colorScheme ?? "light"];
 
     const borderAnim = useRef(new Animated.Value(0)).current;
 
@@ -54,7 +54,10 @@ export default function SecretGiftComponent() {
 
     const borderColor = borderAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [theme.tint + '33', theme.tint],
+        outputRange: [
+            'rgba(52, 152, 219, 0.2)',
+            'rgba(52, 152, 219, 1)',
+        ],
     });
 
     return (
