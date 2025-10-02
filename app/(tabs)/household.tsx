@@ -1,17 +1,35 @@
+import React, { useCallback } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import Sizes from '@/constants/Sizes';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function Household() {
-    const colorScheme = useColorScheme();
-    const theme = Colors[colorScheme ?? "light"];
+  const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? 'light'];
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      (async () => {
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token && active) {
+          router.replace('/login');
+        }
+      })();
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
-    return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
 
-        </SafeAreaView>
-    );
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
