@@ -53,14 +53,10 @@ export default function SettingsScreen() {
 
       <Text style={[styles.sectionTitle, { color: theme.text }]}>Mode de rappel</Text>
       <View style={styles.row}>
-        <TouchableOpacity style={[styles.chip, { borderColor: theme.separator, backgroundColor: prefs.mode === 'summary' ? theme.tint : 'transparent' }]} onPress={() => update({ mode: 'summary' })}>
-          <Text style={{ color: prefs.mode === 'summary' ? theme.background : theme.text }}>Résumé 9h/18h</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.chip, { borderColor: theme.separator, backgroundColor: prefs.mode === 'per-task' ? theme.tint : 'transparent' }]} onPress={() => update({ mode: 'per-task' })}>
-          <Text style={{ color: prefs.mode === 'per-task' ? theme.background : theme.text }}>Par échéance</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.chip, { borderColor: theme.separator, backgroundColor: prefs.mode === 'both' ? theme.tint : 'transparent' }]} onPress={() => update({ mode: 'both' })}>
-          <Text style={{ color: prefs.mode === 'both' ? theme.background : theme.text }}>Les deux</Text>
+        <TouchableOpacity style={[styles.chip, { borderColor: theme.separator, backgroundColor: theme.tint }]}
+          onPress={() => update({ mode: 'per-task' })}
+        >
+          <Text style={{ color: theme.background }}>Par tâche (détaillé)</Text>
         </TouchableOpacity>
       </View>
 
@@ -80,4 +76,3 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
   testButton: { alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: Sizes.BUTTON_RADIUS },
 });
-

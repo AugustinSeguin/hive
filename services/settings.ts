@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type NotificationMode = 'summary' | 'per-task' | 'both';
+export type NotificationMode = 'per-task';
 
 export type NotificationSettings = {
   enabled: boolean;
@@ -13,7 +13,7 @@ const KEY = 'notificationSettings';
 export const defaultSettings: NotificationSettings = {
   enabled: true,
   frequencyMinutes: 15,
-  mode: 'summary',
+  mode: 'per-task',
 };
 
 export async function getNotificationSettings(): Promise<NotificationSettings> {
@@ -21,15 +21,14 @@ export async function getNotificationSettings(): Promise<NotificationSettings> {
     const raw = await AsyncStorage.getItem(KEY);
     if (!raw) return defaultSettings;
     const parsed = JSON.parse(raw);
-    return {
+    const normalized: NotificationSettings = {
       ...defaultSettings,
       ...parsed,
       // normalize
       frequencyMinutes: Math.max(15, Math.min(240, Number(parsed.frequencyMinutes) || 15)),
-      mode: (['summary', 'per-task', 'both'] as NotificationMode[]).includes(parsed.mode)
-        ? parsed.mode
-        : defaultSettings.mode,
+      mode: 'per-task',
     };
+    return normalized;
   } catch {
     return defaultSettings;
   }
@@ -41,4 +40,3 @@ export async function saveNotificationSettings(partial: Partial<NotificationSett
   await AsyncStorage.setItem(KEY, JSON.stringify(next));
   return next;
 }
-

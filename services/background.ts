@@ -3,6 +3,7 @@ import * as BackgroundFetch from 'expo-background-fetch';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getNotificationSettings } from './settings';
+import { applyNotificationPreferences } from './notifications';
 
 export const TASK_NAME = 'task-reminder-background';
 
@@ -36,20 +37,12 @@ TaskManager.defineTask(TASK_NAME, async () => {
       }
     } catch {}
 
+    // Ensure schedules are up to date; do not send generic messages here
     const { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') {
-      return BackgroundFetch.BackgroundFetchResult.NoData;
+    if (status === 'granted') {
+      await applyNotificationPreferences();
     }
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Rappel Hive',
-        body,
-      },
-      trigger: null, // immediate
-    });
-
-    return BackgroundFetch.BackgroundFetchResult.NewData;
+    return BackgroundFetch.BackgroundFetchResult.NoData;
   } catch (e) {
     return BackgroundFetch.BackgroundFetchResult.Failed;
   }

@@ -6,7 +6,6 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useEffect } from 'react';
 import { initNotifications, applyNotificationPreferences } from '@/services/notifications';
-import { applyBackgroundPreferences } from '@/services/background';
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -19,7 +18,6 @@ export default function RootLayout() {
     (async () => {
       await initNotifications();
       await applyNotificationPreferences();
-      await applyBackgroundPreferences();
     })();
   }, []);
 

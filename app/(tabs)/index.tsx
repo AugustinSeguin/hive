@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, SectionList } from "react-native";
+import { SectionList, StyleSheet } from "react-native";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ThemedText } from "@/components/ThemedText";
+import ButtonComponent from "@/components/ButtonComponent";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TaskComponent from "@/components/TaskComponent";
-import ButtonComponent from "@/components/ButtonComponent";
 import type { TaskProps } from "@/components/TaskComponent";
-import { router } from "expo-router";
+import { ThemedText } from "@/components/ThemedText";
 import { applyNotificationPreferences } from "@/services/notifications";
+import { router } from "expo-router";
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // Fake data for TaskComponent
@@ -250,6 +252,12 @@ async function updateTask(id: number | undefined | null) {
       } catch (err) {
         console.error(`[updateTask] PUT failed for id=${id}`, err);
       }
+    }
+
+    try {
+      await applyNotificationPreferences(updatedTasks);
+    } catch (e) {
+      console.warn('[notifications] re-apply after update failed', e);
     }
   } catch (e) {
     console.error("Erreur lors de la mise à jour de la tâche", e);

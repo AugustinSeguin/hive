@@ -16,7 +16,9 @@ const STORAGE_SUMMARY_IDS = 'summaryReminderIds';
 export async function initNotifications() {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
+      // New API (shouldShowAlert is deprecated)
+      shouldShowBanner: true,
+      shouldShowList: true,
       shouldPlaySound: false,
       shouldSetBadge: false,
     }),
@@ -77,25 +79,66 @@ export async function scheduleTaskReminders(tasks: SchedulableTask[]) {
     if (!task?.dueDate || !task.titre) continue;
     const due = new Date(task.dueDate);
     if (isNaN(due.getTime())) continue;
+    if (task.done) continue;
 
-    const title = 'Rappel de tâche';
-    const body = `${task.titre}`;
+    const midnightNow = new Date(now);
+    midnightNow.setHours(0, 0, 0, 0);
+    const midnightDue = new Date(due);
+    midnightDue.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((midnightDue.getTime() - midnightNow.getTime()) / 86400000);
+
+    let title = 'Tâche à faire';
+    if (diffDays < 0) title = 'Tâche en retard';
+    else if (diffDays === 0) title = 'Tâche du jour';
+    else if (diffDays === 1) title = 'Tâche pour demain';
+    else title = 'Tâche à venir';
+
+    const rel = diffDays < 0
+      ? `en retard (${Math.abs(diffDays)}j)`
+      : diffDays === 0
+      ? `aujourd'hui`
+      : diffDays === 1
+      ? `demain`
+      : diffDays <= 7
+      ? `dans ${diffDays}j`
+      : `le ${due.toLocaleDateString()}`;
+    const body = `${task.titre} ${rel}`;
 
     const dayBefore = new Date(due);
     dayBefore.setDate(dayBefore.getDate() - 1);
 
     const preReminder = atTime(dayBefore, 18, 0);
-    const dayReminder = atTime(due, 9, 0);
+    const morningReminder = atTime(due, 9, 0);
+    const eveningReminder = atTime(due, 17, 0);
 
     const toSchedule: Date[] = [];
-    if (preReminder.getTime() > now.getTime()) toSchedule.push(preReminder);
-    if (dayReminder.getTime() > now.getTime()) toSchedule.push(dayReminder);
+    if (diffDays === 1 && preReminder.getTime() > now.getTime()) toSchedule.push(preReminder);
+    if (diffDays >= 0 && morningReminder.getTime() > now.getTime()) toSchedule.push(morningReminder);
+    if (diffDays === 0 && eveningReminder.getTime() > now.getTime()) toSchedule.push(eveningReminder);
 
     for (const when of toSchedule) {
       try {
         const id = await Notifications.scheduleNotificationAsync({
-          content: { title, body },
+          content: {
+            title,
+            body,
+            data: { taskId: task.id ?? null, deepLink: 'hive://(tabs)' },
+          },
           trigger: { date: when, channelId: Platform.OS === 'android' ? 'reminders' : undefined } as any,
+        });
+        scheduledIds.push(id);
+      } catch {}
+    }
+
+    if (diffDays < 0) {
+      try {
+        const id = await Notifications.scheduleNotificationAsync({
+          content: {
+            title: 'Tâche en retard',
+            body: `${task.titre} en retard (${Math.abs(diffDays)}j)`,
+            data: { taskId: task.id ?? null, deepLink: 'hive://(tabs)' },
+          },
+          trigger: { hour: 10, minute: 0, repeats: true, channelId: Platform.OS === 'android' ? 'reminders' : undefined } as any,
         });
         scheduledIds.push(id);
       } catch {}
@@ -116,32 +159,8 @@ export async function clearDailySummaries() {
   await AsyncStorage.removeItem(STORAGE_SUMMARY_IDS);
 }
 
-// Schedule two repeating daily summaries (9:00 and 18:00)
-export async function scheduleDailySummaries() {
-  const enabled = await initNotifications();
-  if (!enabled) return;
-  await clearDailySummaries();
-  const scheduled: string[] = [];
-  const hours = [9, 18];
-  for (const h of hours) {
-    try {
-      const id = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Résumé des tâches',
-          body: "Pensez à vos tâches du jour dans Hive.",
-        },
-        trigger: {
-          hour: h,
-          minute: 0,
-          repeats: true,
-          channelId: Platform.OS === 'android' ? 'reminders' : undefined,
-        } as any,
-      });
-      scheduled.push(id);
-    } catch {}
-  }
-  await AsyncStorage.setItem(STORAGE_SUMMARY_IDS, JSON.stringify(scheduled));
-}
+// Note: Daily summaries are disabled per product decision (only per-task notifications are allowed).
+export async function scheduleDailySummaries() { await clearDailySummaries(); }
 
 export async function clearAllSchedules() {
   await clearTaskReminders();
@@ -155,22 +174,18 @@ export async function applyNotificationPreferences(tasks?: SchedulableTask[]) {
     await clearAllSchedules();
     return;
   }
-  if (prefs.mode === 'summary' || prefs.mode === 'both') {
-    await scheduleDailySummaries();
-  } else {
-    await clearDailySummaries();
+  // Always disable summaries; only per-task notifications are allowed
+  await clearDailySummaries();
+
+  let source = tasks;
+  if (!source) {
+    try {
+      const raw = await AsyncStorage.getItem('tasks');
+      if (raw) source = JSON.parse(raw);
+    } catch {}
   }
-  if (prefs.mode === 'per-task' || prefs.mode === 'both') {
-    let source = tasks;
-    if (!source) {
-      try {
-        const raw = await AsyncStorage.getItem('tasks');
-        if (raw) source = JSON.parse(raw);
-      } catch {}
-    }
-    if (source && Array.isArray(source)) {
-      await scheduleTaskReminders(source as SchedulableTask[]);
-    }
+  if (source && Array.isArray(source)) {
+    await scheduleTaskReminders(source as SchedulableTask[]);
   } else {
     await clearTaskReminders();
   }
@@ -189,4 +204,3 @@ export async function scheduleTestBurst(count = 3, seconds = 30) {
     } catch {}
   }
 }
-
