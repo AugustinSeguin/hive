@@ -49,46 +49,40 @@ export default function HomeScreen() {
   const fetchTasks = async () => {
     try {
       let cached = await AsyncStorage.getItem("tasks");
+      const token = await AsyncStorage.getItem("userToken");
       let tasks: TaskProps[] = [];
-      if (cached) {
-        tasks = JSON.parse(cached);
-      } else {
-        const token = await AsyncStorage.getItem("userToken");
-
-        if (!token) {
-          Alert.alert(
-            "Erreur d'authentification",
-            "Token non trouvé. Veuillez vous reconnecter."
-          );
-          return false;
-        }
-
-        const response = await fetch(`${API_URL}/tasks`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          const errorData = await response
-            .json()
-            .catch(() => ({ message: "Erreur inconnue." }));
-
-          Alert.alert(
-            "Échec de la complétion",
-            errorData.message ||
-              `Erreur serveur: ${response.status} (${response.statusText})`
-          );
-          return false;
-        }
-        await AsyncStorage.setItem("tasks", JSON.stringify(tasks));
-        console.log(
-          "[fetchTasks] tasks initialized with fakeTasks:",
-          tasks.map((t) => ({ id: t.id, titre: t.titre, done: t.done }))
+      if (!token) {
+        Alert.alert(
+          "Erreur d'authentification",
+          "Token non trouvé. Veuillez vous reconnecter."
         );
+        return false;
       }
+
+      const response = await fetch(`${API_URL}/tasks`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "1",
+          "User-Agent": "MyApp/1.0.0",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Erreur inconnue." }));
+
+        Alert.alert(
+          "Échec de la complétion",
+          errorData.message ||
+            `Erreur serveur: ${response.status} (${response.statusText})`
+        );
+        return false;
+      }
+      await AsyncStorage.setItem("tasks", JSON.stringify(tasks));
+
       tasks.sort((a, b) => {
         if (a.dueDate && b.dueDate) {
           return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
@@ -109,6 +103,16 @@ export default function HomeScreen() {
         console.warn('[notifications] apply preferences failed', e);
       }
     } catch (e) {
+     const cached = await AsyncStorage.getItem("tasks");
+      if (!cached) return;
+      const tasks = JSON.parse(cached);
+      const { lateTasks, soonTasks, currentWeekTasks, laterTasks } =
+        filterTasksByDate(tasks);
+
+      setLateTasks(lateTasks);
+      setSoonTasks(soonTasks);
+      setCurrentWeekTasks(currentWeekTasks);
+      setLaterTasks(laterTasks);
       console.error(e);
     }
   };
