@@ -9,6 +9,7 @@ import type { TaskProps } from "@/components/TaskComponent";
 import { ThemedText } from "@/components/ThemedText";
 import { applyNotificationPreferences } from "@/services/notifications";
 import { router } from "expo-router";
+import { getTasks as getTasksService, updateTask as updateTaskService } from "@/services/tasks";
 import { useFocusEffect } from "@react-navigation/native";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -180,15 +181,33 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    fetchTasks();
+    fetchTasksSmart();
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      fetchTasks();
+      fetchTasksSmart();
     }, [])
   );
 
+    const fetchTasksSmart = async () => {
+    try {
+      let tasks: TaskProps[] = (await getTasksService()) as any;
+      if (!tasks || !Array.isArray(tasks)) tasks = [];
+      tasks.sort((a, b) => {
+        if (a.dueDate && b.dueDate) {
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        }
+        return 0;
+      });
+      const { lateTasks, soonTasks, currentWeekTasks, laterTasks } = filterTasksByDate(tasks);
+      setLateTasks(lateTasks);
+      setSoonTasks(soonTasks);
+      setCurrentWeekTasks(currentWeekTasks);
+      setLaterTasks(laterTasks);
+      try { await applyNotificationPreferences(tasks); } catch (e) { console.warn('[notifications] apply preferences failed', e); }
+    } catch (e) { console.error(e); }
+  };
   const sections = [
     { title: "En retard", data: lateTasks },
     { title: "Proche échéance", data: soonTasks },
@@ -205,8 +224,8 @@ export default function HomeScreen() {
           <TaskComponent
             {...item}
             action={async () => {
-              await updateTask(item.id);
-              await fetchTasks();
+              await updateTaskService(item.id as any, { done: !item.done } as any);
+              await fetchTasksSmart();
             }}
             onLongPress={() => {
               if (item.id != null) {
@@ -298,3 +317,5 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
 });
+
+

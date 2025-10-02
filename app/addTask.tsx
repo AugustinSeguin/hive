@@ -15,6 +15,7 @@ import { Colors } from "@/constants/Colors";
 import ButtonComponent from "@/components/ButtonComponent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { createTask } from "@/services/tasks";
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 function getXpFromDifficulty(
@@ -46,14 +47,30 @@ const AddTaskScreen = () => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
   const themedStyles = getThemedStyles(theme);
+  async function saveTaskSmart() {
+    const newTask = {
+      repetition: type === "recurring" ? Number(recurringDays) || 1 : 1,
+      deactivated: false,
+      xp: getXpFromDifficulty(difficulty),
+      titre: name,
+      description,
+      dueDate: dueDate ? dueDate.toISOString().split("T")[0] : undefined,
+      done: false,
+    };
+    try {
+      await createTask(newTask as any);
+      router.push("/");
+    } catch (e) {
+      console.error("Erreur lors de la sauvegarde de la tache", e);
+    }
+  }
 
   async function handleSaveTask() {
     const newTask = {
       repetition: type === "recurring" ? Number(recurringDays) || 1 : 1,
       deactivated: false,
       xp: getXpFromDifficulty(difficulty),
-      dueDateStatus: "late",
-      titre: name,
+            titre: name,
       dueDate: dueDate ? dueDate.toISOString().split("T")[0] : undefined,
       done: false,
     };
@@ -259,7 +276,7 @@ const AddTaskScreen = () => {
       <ButtonComponent
         type="primary"
         titre="Ajouter la Tâche"
-        action={handleSaveTask}
+        action={saveTaskSmart}
         style={themedStyles.saveButton}
       />
     </View>
@@ -340,3 +357,6 @@ function getThemedStyles(theme: typeof Colors.light) {
 }
 
 export default AddTaskScreen;
+
+
+

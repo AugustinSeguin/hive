@@ -6,6 +6,7 @@ import { Colors } from '@/constants/Colors';
 import Sizes from '@/constants/Sizes';
 import { Feather } from '@expo/vector-icons';
 import EditHouseholdModal from "@/components/household/EditHousehold";
+import { syncLocalTasksToHousehold, syncIfNeeded } from "@/services/tasks";
 import { router } from 'expo-router';
 
 const defaultMembers = [
@@ -33,6 +34,7 @@ export default function HouseholdList() {
 
             if (storedId) {
                 setHouseholdId(storedId);
+                try { await syncIfNeeded(); } catch {}
 
                 const res = await fetch(`${apiUrl}/households/${storedId}`, {
                     headers: { Authorization: `Bearer ${token}` },
@@ -87,6 +89,7 @@ export default function HouseholdList() {
                 const data = await res.json();
                 setHouseholdId(data.id.toString());
                 await AsyncStorage.setItem("householdId", data.id.toString());
+                try { await syncLocalTasksToHousehold(String(data.id)); } catch (e) { console.warn('[household] sync tasks after create failed', e); }
             } else {
                 // Edition du foyer
                 const res = await fetch(`${apiUrl}/households/${householdId}`, {

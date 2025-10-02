@@ -5,6 +5,7 @@ import Sizes from "@/constants/Sizes";
 import { Colors } from "@/constants/Colors";
 import ButtonComponent from "@/components/ButtonComponent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { updateTask as updateTaskService, deleteTask as deleteTaskService } from "@/services/tasks";
 import { router, useLocalSearchParams } from "expo-router";
 
 function getXpFromDifficulty(difficulty: "facile" | "moyen" | "difficile"): number {
@@ -79,7 +80,33 @@ export default function EditTaskScreen() {
     }
   }
 
-  async function remove() {
+  
+  async function saveSmart() {
+    if (editingId == null || Number.isNaN(editingId)) return;
+    const base = {
+      repetition: type === "recurring" ? Number(recurringDays) || 1 : 1,
+      xp: getXpFromDifficulty(difficulty),
+      titre: name,
+      description,
+      dueDate: dueDate ? dueDate.toISOString().split("T")[0] : undefined,
+    };
+    try {
+      await updateTaskService(editingId, base as any);
+      router.replace("/");
+    } catch (e) {
+      console.error("Erreur lors de la mise � jour (DB)", e);
+    }
+  }
+
+  async function removeSmart() {
+    if (editingId == null || Number.isNaN(editingId)) return;
+    try {
+      await deleteTaskService(editingId);
+      router.replace("/");
+    } catch (e) {
+      console.error("Erreur lors de la suppression (DB)", e);
+    }
+  }async function remove() {
     if (editingId == null || Number.isNaN(editingId)) return;
     const confirm = true;
     try {
@@ -160,8 +187,8 @@ export default function EditTaskScreen() {
       <Text style={styles.label}>Description</Text>
       <TextInput style={[styles.input, styles.textarea]} placeholder="Ajouter des détails sur la tâche..." value={description} onChangeText={setDescription} multiline numberOfLines={3} placeholderTextColor={theme.secondary} />
 
-      <ButtonComponent type="primary" titre="Enregistrer" action={save} style={styles.saveButton} />
-      <ButtonComponent type="secondary" titre="Supprimer la Tâche" action={remove} style={styles.saveButton} />
+      <ButtonComponent type="primary" titre="Enregistrer" action={saveSmart} style={styles.saveButton} />
+      <ButtonComponent type="secondary" titre="Supprimer la Tâche" action={removeSmart} style={styles.saveButton} />
     </View>
   );
 }
@@ -181,4 +208,8 @@ function getStyles(theme: typeof Colors.light) {
     saveButton: { marginTop: Sizes.SPACING_XL, borderRadius: Sizes.BUTTON_RADIUS, backgroundColor: theme.tint, alignSelf: "center", width: "100%" },
   });
 }
+
+
+
+
 
