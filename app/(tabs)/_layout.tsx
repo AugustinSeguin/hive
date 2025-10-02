@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, TouchableOpacity, View } from 'react-native';
+import { Image, TouchableOpacity, View, Text } from 'react-native';
 import { Tabs, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
@@ -8,6 +8,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 
 function HeaderActions() {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const colorScheme = useColorScheme();
 
   useEffect(() => {
@@ -18,6 +19,8 @@ function HeaderActions() {
           const parsed = JSON.parse(raw);
           setAvatarUri(parsed?.avatarUri ?? null);
         }
+        const token = await AsyncStorage.getItem('userToken');
+        setIsAuthenticated(!!token);
       } catch {
         // ignore
       }
@@ -37,15 +40,21 @@ function HeaderActions() {
       >
         <Ionicons name="settings-outline" size={22} color={iconColor} />
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push('/profile')} accessibilityLabel="Ouvrir le profil">
-        {avatarUri ? (
-          <Image source={{ uri: avatarUri }} style={{ width: size, height: size, borderRadius: size / 2 }} />
-        ) : (
-          <View style={{ width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="person-circle-outline" size={iconSize} color={iconColor} />
-          </View>
-        )}
-      </TouchableOpacity>
+      {isAuthenticated ? (
+        <TouchableOpacity onPress={() => router.push('/profile')} accessibilityLabel="Ouvrir le profil">
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={{ width: size, height: size, borderRadius: size / 2 }} />
+          ) : (
+            <View style={{ width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="person-circle-outline" size={iconSize} color={iconColor} />
+            </View>
+          )}
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity onPress={() => router.push('/login')} accessibilityLabel="Se connecter" style={{ paddingHorizontal: 8, paddingVertical: 6 }}>
+          <Text style={{ color: iconColor, fontWeight: '600' }}>Se connecter</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
