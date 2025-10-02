@@ -1,10 +1,14 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import "react-native-reanimated";
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -13,23 +17,35 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
-    return (
-        <SafeAreaProvider>
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                <Stack>
-                    <Stack.Screen name="login" options={{ headerShown: false }} />
-                    <Stack.Screen name="register" options={{ headerShown: false }} />
+  const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
 
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+  return (
+    <SafeAreaProvider>
+      <ThemeProvider value={theme}>
+        <Stack
+          screenOptions={{
+            contentStyle: {
+              backgroundColor: theme.colors.background,
+            },
+          }}
+        >
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="register" options={{ headerShown: false }} />
 
-                    <Stack.Screen name="addTask" options={{ title: "Nouvelle tâche", headerShown: true }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-                    <Stack.Screen name="settings" options={{ title: "Paramètres" }} />
+          <Stack.Screen
+            name="addTask"
+            options={{ title: "Nouvelle tâche", headerShown: true }}
+          />
 
-                    <Stack.Screen name="+not-found" />
-                </Stack>
-                <StatusBar style="auto" />
-            </ThemeProvider>
-        </SafeAreaProvider>
-    );
+          <Stack.Screen name="settings" options={{ title: "Paramètres" }} />
+
+          <Stack.Screen name="+not-found" />
+        </Stack>
+
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </SafeAreaProvider>
+  );
 }
