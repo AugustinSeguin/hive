@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { StyleSheet, SectionList } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedText } from "@/components/ThemedText";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TaskComponent from "@/components/TaskComponent";
 import ButtonComponent from "@/components/ButtonComponent";
 import type { TaskProps } from "@/components/TaskComponent";
+import { router } from "expo-router";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // Fake data for TaskComponent
 const fakeTasks: TaskProps[] = [
   {
+    id: 1,
+    repetition: 1,
+    deactivated: false,
+    xp: 100,
     dueDateStatus: "late",
     action: () => console.log("task done: Nettoyer la salle de bain"),
     titre: "Nettoyer la salle de bain",
@@ -16,6 +23,10 @@ const fakeTasks: TaskProps[] = [
     done: false,
   },
   {
+    id: 2,
+    repetition: 1,
+    deactivated: false,
+    xp: 100,
     dueDateStatus: "late",
     action: () => console.log("task done: Sortir les poubelles"),
     titre: "Sortir les poubelles",
@@ -23,6 +34,10 @@ const fakeTasks: TaskProps[] = [
     done: true,
   },
   {
+    id: 3,
+    repetition: 1,
+    deactivated: false,
+    xp: 100,
     dueDateStatus: "soon",
     action: () => console.log("task done: Faire la lessive"),
     titre: "Faire la lessive",
@@ -30,6 +45,10 @@ const fakeTasks: TaskProps[] = [
     done: false,
   },
   {
+    id: 4,
+    repetition: 1,
+    deactivated: false,
+    xp: 100,
     dueDateStatus: "soon",
     action: () => console.log("task done: Passer l'aspirateur"),
     titre: "Passer l'aspirateur",
@@ -37,6 +56,10 @@ const fakeTasks: TaskProps[] = [
     done: false,
   },
   {
+    id: 5,
+    repetition: 1,
+    deactivated: false,
+    xp: 100,
     dueDateStatus: "currentWeek",
     action: () => console.log("task done: Arroser les plantes"),
     titre: "Arroser les plantes",
@@ -44,6 +67,10 @@ const fakeTasks: TaskProps[] = [
     done: false,
   },
   {
+    id: 6,
+    repetition: 1,
+    deactivated: false,
+    xp: 100,
     dueDateStatus: "currentWeek",
     action: () => console.log("task done: Faire les courses"),
     titre: "Faire les courses",
@@ -51,6 +78,10 @@ const fakeTasks: TaskProps[] = [
     done: false,
   },
   {
+    id: 7,
+    repetition: 1,
+    deactivated: false,
+    xp: 100,
     dueDateStatus: "later",
     action: () => console.log("task done: Nettoyer le garage"),
     titre: "Nettoyer le garage",
@@ -63,6 +94,10 @@ const fakeTasks: TaskProps[] = [
     titre: "Laver la voiture",
     dueDate: "2025-09-28",
     done: false,
+    id: 8,
+    repetition: 1,
+    deactivated: false,
+    xp: 100,
   },
 ];
 
@@ -101,10 +136,22 @@ export default function HomeScreen() {
   const [currentWeekTasks, setCurrentWeekTasks] = useState<TaskProps[]>([]);
   const [laterTasks, setLaterTasks] = useState<TaskProps[]>([]);
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      let tasks = fakeTasks.sort((a, b) => {
+  const fetchTasks = async () => {
+    const URL = API_URL + "/tasks";
+    try {
+      let cached = await AsyncStorage.getItem("tasks");
+      let tasks: TaskProps[] = [];
+      if (cached) {
+        tasks = JSON.parse(cached);
+      } else {
+        tasks = fakeTasks;
+        await AsyncStorage.setItem("tasks", JSON.stringify(tasks));
+        console.log(
+          "[fetchTasks] tasks initialized with fakeTasks:",
+          tasks.map((t) => ({ id: t.id, titre: t.titre, done: t.done }))
+        );
+      }
+      tasks.sort((a, b) => {
         if (a.dueDate && b.dueDate) {
           return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
         }
@@ -112,11 +159,17 @@ export default function HomeScreen() {
       });
       const { lateTasks, soonTasks, currentWeekTasks, laterTasks } =
         filterTasksByDate(tasks);
+
       setLateTasks(lateTasks);
       setSoonTasks(soonTasks);
       setCurrentWeekTasks(currentWeekTasks);
       setLaterTasks(laterTasks);
-    };
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
     fetchTasks();
   }, []);
 
@@ -129,11 +182,18 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ThemedText style={styles.headerTitle}>Liste des tâches</ThemedText>
       <SectionList
         sections={sections}
-        keyExtractor={(item) => item.titre + "-" + item.dueDate}
-        renderItem={({ item }) => <TaskComponent {...item} />}
+        keyExtractor={(item) => `${item.id}-${item.done}`}
+        renderItem={({ item }) => (
+          <TaskComponent
+            {...item}
+            action={async () => {
+              await updateTask(item.id);
+              await fetchTasks();
+            }}
+          />
+        )}
         renderSectionHeader={({ section }) => (
           <ThemedText style={styles.sectionHeader}>{section.title}</ThemedText>
         )}
@@ -142,14 +202,53 @@ export default function HomeScreen() {
         type="secondary"
         titre="+"
         action={() => {
-          // Action d'ajout de tâche
-          console.log("Ajout d'une tâche");
+          router.push("/addTask");
         }}
         style={styles.floatingButton}
       />
     </SafeAreaView>
   );
 }
+
+async function updateTask(id: number | undefined | null) {
+  if (id == null) return;
+  try {
+    const cached = await AsyncStorage.getItem("tasks");
+    if (!cached) return;
+    const tasks = JSON.parse(cached);
+    let updatedTask = null;
+    const updatedTasks = tasks.map((task: any) => {
+      if (task.id === id) {
+        updatedTask = { ...task, done: !task.done };
+        console.log(
+          `[updateTask] toggling done for id=${id} (avant: ${
+            task.done
+          }, après: ${!task.done})`
+        );
+        return updatedTask;
+      }
+      return task;
+    });
+    await AsyncStorage.setItem("tasks", JSON.stringify(updatedTasks));
+
+    if (updatedTask) {
+      const url = `${API_URL}/tasks/${id}`;
+      try {
+        await fetch(url, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedTask),
+        });
+        console.log(`[updateTask] PUT sent to API for id=${id}`);
+      } catch (err) {
+        console.error(`[updateTask] PUT failed for id=${id}`, err);
+      }
+    }
+  } catch (e) {
+    console.error("Erreur lors de la mise à jour de la tâche", e);
+  }
+}
+
 const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,

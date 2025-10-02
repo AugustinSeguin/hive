@@ -47,7 +47,7 @@ function getButtonStyles(
       },
     };
   } else {
-    const size = Sizes.AVATAR_SIZE_LG;
+    const size = Sizes.AVATAR_SIZE_XL;
     return {
       button: {
         ...styles.button,
@@ -62,7 +62,7 @@ function getButtonStyles(
       text: {
         ...styles.text,
         color: Colors[colorScheme ?? "light"].text,
-        fontSize: Sizes.FONT_SIZE_SM,
+        fontSize: Sizes.FONT_SIZE_XXL,
       },
     };
   }
