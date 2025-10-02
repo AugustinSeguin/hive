@@ -2,6 +2,8 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { LogBox, Platform } from 'react-native';
+import { LogBox, Platform } from 'react-native';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useEffect } from 'react';
@@ -18,6 +20,7 @@ export default function RootLayout() {
     (async () => {
       await initNotifications();
       await applyNotificationPreferences();
+      if (Platform.OS === 'android') { LogBox.ignoreLogs([/expo-notifications:\s*Android Push notifications.*Expo Go/i]); }
     })();
   }, []);
 
@@ -28,6 +31,7 @@ export default function RootLayout() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
         <Stack.Screen name="addTask" options={{ title: 'Nouvelle tâche' }} />
+        <Stack.Screen name="editTask" options={{ title: 'Modifier la t�che' }} />
         <Stack.Screen name="settings" options={{ title: 'Paramètres' }} />
         <Stack.Screen name="+not-found" />
       </Stack>

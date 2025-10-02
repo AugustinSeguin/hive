@@ -16,6 +16,7 @@ export type TaskProps = {
   id?: number | undefined;
   dueDateStatus: "late" | "soon" | "currentWeek" | "later" | undefined;
   action: () => void;
+  onLongPress?: () => void;
   titre: string;
   dueDate: string | undefined;
   done?: boolean;
@@ -119,7 +120,7 @@ function getStyles(colorScheme: "light" | "dark") {
 }
 
 const TaskComponent: React.FC<TaskProps> = React.memo(
-  ({ action, titre, dueDate, dueDateStatus, done, xp }) => {
+  ({ action, onLongPress, titre, dueDate, dueDateStatus, done, xp }) => {
     const colorScheme = useColorScheme() ?? "light";
     const styles = getStyles(colorScheme);
     const borderColor = getBorderColor(dueDateStatus, colorScheme);
@@ -128,6 +129,7 @@ const TaskComponent: React.FC<TaskProps> = React.memo(
     return (
       <TouchableOpacity
         onPress={action}
+        onLongPress={onLongPress}
         style={[
           styles.card,
           { borderLeftColor: borderColor },

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { SectionList, StyleSheet } from "react-native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -9,6 +9,7 @@ import type { TaskProps } from "@/components/TaskComponent";
 import { ThemedText } from "@/components/ThemedText";
 import { applyNotificationPreferences } from "@/services/notifications";
 import { router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -182,6 +183,12 @@ export default function HomeScreen() {
     fetchTasks();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchTasks();
+    }, [])
+  );
+
   const sections = [
     { title: "En retard", data: lateTasks },
     { title: "Proche échéance", data: soonTasks },
@@ -200,6 +207,11 @@ export default function HomeScreen() {
             action={async () => {
               await updateTask(item.id);
               await fetchTasks();
+            }}
+            onLongPress={() => {
+              if (item.id != null) {
+                router.push(`/editTask?id=${item.id}`);
+              }
             }}
           />
         )}
