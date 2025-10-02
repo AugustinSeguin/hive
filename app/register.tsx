@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
 import Sizes from "@/constants/Sizes";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -10,6 +11,7 @@ export default function LoginScreen() {
     const [pseudo, setPseudo] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const colorScheme = useColorScheme();
     const themeColors = Colors[colorScheme ?? "light"];
     const apiUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -93,21 +95,35 @@ export default function LoginScreen() {
                 onChangeText={setEmail}
             />
 
-            <TextInput
-                style={[
-                    styles.input,
-                    {
-                        borderColor: themeColors.separator,
-                        backgroundColor: themeColors.background,
-                        color: themeColors.text,
-                    },
-                ]}
-                placeholder="Mot de passe"
-                placeholderTextColor={themeColors.secondary}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-            />
+            <View style={styles.inputWrapper}>
+                <TextInput
+                    style={[
+                        styles.input,
+                        {
+                            borderColor: themeColors.separator,
+                            backgroundColor: themeColors.background,
+                            color: themeColors.text,
+                            paddingRight: Sizes.SPACING_XL + 8,
+                        },
+                    ]}
+                    placeholder="Mot de passe"
+                    placeholderTextColor={themeColors.secondary}
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={setPassword}
+                />
+                <TouchableOpacity
+                    accessibilityLabel={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    onPress={() => setShowPassword((s) => !s)}
+                    style={styles.eyeButton}
+                >
+                    <Ionicons
+                        name={showPassword ? "eye-off" : "eye"}
+                        size={22}
+                        color={themeColors.secondary}
+                    />
+                </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
                 style={[styles.button, { backgroundColor: themeColors.tint, height: Sizes.BUTTON_HEIGHT_LG }]}
@@ -140,6 +156,19 @@ const styles = StyleSheet.create({
         borderRadius: Sizes.INPUT_RADIUS,
         paddingHorizontal: Sizes.SPACING_MD,
         marginBottom: Sizes.SPACING_MD,
+    },
+    inputWrapper: {
+        width: "100%",
+        marginBottom: Sizes.SPACING_MD,
+        position: "relative",
+    },
+    eyeButton: {
+        position: "absolute",
+        right: Sizes.SPACING_MD,
+        top: 0,
+        height: Sizes.INPUT_HEIGHT,
+        justifyContent: "center",
+        alignItems: "center",
     },
     button: {
         width: "100%",
