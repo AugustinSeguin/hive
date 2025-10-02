@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { SectionList, StyleSheet } from "react-native";
+import { Alert, SectionList, StyleSheet, View } from "react-native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ButtonComponent from "@/components/ButtonComponent";
-import { SafeAreaView } from "react-native-safe-area-context";
 import TaskComponent from "@/components/TaskComponent";
 import type { TaskProps } from "@/components/TaskComponent";
 import { ThemedText } from "@/components/ThemedText";
@@ -13,99 +12,6 @@ import { useFocusEffect } from "@react-navigation/native";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-// Fake data for TaskComponent
-const fakeTasks: TaskProps[] = [
-  {
-    id: 1,
-    repetition: 1,
-    deactivated: false,
-    xp: 100,
-    dueDateStatus: "late",
-    action: () => console.log("task done: Nettoyer la salle de bain"),
-    titre: "Nettoyer la salle de bain",
-    dueDate: "2025-09-10",
-    done: false,
-  },
-  {
-    id: 2,
-    repetition: 1,
-    deactivated: false,
-    xp: 100,
-    dueDateStatus: "late",
-    action: () => console.log("task done: Sortir les poubelles"),
-    titre: "Sortir les poubelles",
-    dueDate: "2025-09-08",
-    done: true,
-  },
-  {
-    id: 3,
-    repetition: 1,
-    deactivated: false,
-    xp: 100,
-    dueDateStatus: "soon",
-    action: () => console.log("task done: Faire la lessive"),
-    titre: "Faire la lessive",
-    dueDate: "2025-09-12",
-    done: false,
-  },
-  {
-    id: 4,
-    repetition: 1,
-    deactivated: false,
-    xp: 100,
-    dueDateStatus: "soon",
-    action: () => console.log("task done: Passer l'aspirateur"),
-    titre: "Passer l'aspirateur",
-    dueDate: "2025-09-13",
-    done: false,
-  },
-  {
-    id: 5,
-    repetition: 1,
-    deactivated: false,
-    xp: 100,
-    dueDateStatus: "currentWeek",
-    action: () => console.log("task done: Arroser les plantes"),
-    titre: "Arroser les plantes",
-    dueDate: "2025-09-15",
-    done: false,
-  },
-  {
-    id: 6,
-    repetition: 1,
-    deactivated: false,
-    xp: 100,
-    dueDateStatus: "currentWeek",
-    action: () => console.log("task done: Faire les courses"),
-    titre: "Faire les courses",
-    dueDate: "2025-09-16",
-    done: false,
-  },
-  {
-    id: 7,
-    repetition: 1,
-    deactivated: false,
-    xp: 100,
-    dueDateStatus: "later",
-    action: () => console.log("task done: Nettoyer le garage"),
-    titre: "Nettoyer le garage",
-    dueDate: "2025-09-25",
-    done: false,
-  },
-  {
-    dueDateStatus: "later",
-    action: () => console.log("task done: Laver la voiture"),
-    titre: "Laver la voiture",
-    dueDate: "2025-09-28",
-    done: false,
-    id: 8,
-    repetition: 1,
-    deactivated: false,
-    xp: 100,
-  },
-];
-
-// Helper pour filtrer les tâches par date
 function filterTasksByDate(tasks: TaskProps[]) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -141,14 +47,42 @@ export default function HomeScreen() {
   const [laterTasks, setLaterTasks] = useState<TaskProps[]>([]);
 
   const fetchTasks = async () => {
-    const URL = API_URL + "/tasks";
     try {
       let cached = await AsyncStorage.getItem("tasks");
       let tasks: TaskProps[] = [];
       if (cached) {
         tasks = JSON.parse(cached);
       } else {
-        tasks = fakeTasks;
+        const token = await AsyncStorage.getItem("userToken");
+
+        if (!token) {
+          Alert.alert(
+            "Erreur d'authentification",
+            "Token non trouvé. Veuillez vous reconnecter."
+          );
+          return false;
+        }
+
+        const response = await fetch(`${API_URL}/tasks`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response
+            .json()
+            .catch(() => ({ message: "Erreur inconnue." }));
+
+          Alert.alert(
+            "Échec de la complétion",
+            errorData.message ||
+              `Erreur serveur: ${response.status} (${response.statusText})`
+          );
+          return false;
+        }
         await AsyncStorage.setItem("tasks", JSON.stringify(tasks));
         console.log(
           "[fetchTasks] tasks initialized with fakeTasks:",
@@ -197,7 +131,7 @@ export default function HomeScreen() {
   ].filter((section) => section.data.length > 0);
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <SectionList
         sections={sections}
         keyExtractor={(item) => `${item.id}-${item.done}`}
@@ -227,7 +161,7 @@ export default function HomeScreen() {
         }}
         style={styles.floatingButton}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,6 +12,8 @@ import { Colors } from "../constants/Colors";
 import Sizes from "../constants/Sizes";
 
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export type TaskProps = {
   id?: number | undefined;
@@ -24,8 +27,6 @@ export type TaskProps = {
   deactivated?: boolean;
   xp?: number | undefined;
 };
-
-// title, repetition, dueDate, deactivated, xp,
 
 function getBorderColor(
   dueDateStatus: "late" | "soon" | "currentWeek" | "later" | undefined,
@@ -140,8 +141,12 @@ const TaskComponent: React.FC<TaskProps> = React.memo(
         <View style={styles.content}>
           <View style={styles.textContainer}>
             <Text style={styles.title}>{titre}</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              {dueDateText && <Text style={styles.subtitle}>{dueDateText}</Text>}
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              {dueDateText && (
+                <Text style={styles.subtitle}>{dueDateText}</Text>
+              )}
               <View
                 style={{
                   borderWidth: 1,
@@ -188,5 +193,145 @@ const TaskComponent: React.FC<TaskProps> = React.memo(
     prevProps.titre === nextProps.titre &&
     prevProps.dueDate === nextProps.dueDate
 );
+
+export type ApiTaskJson = {
+  id: number;
+  title: string;
+  repetition: number | null;
+  dueDate: string | null;
+  deactivated: boolean;
+  xp: number;
+  done?: boolean;
+};
+
+function calculateDueDateStatus(
+  dueDateStr: string | null | undefined
+): TaskProps["dueDateStatus"] {
+  if (!dueDateStr) return undefined;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const dueDate = new Date(dueDateStr);
+  dueDate.setHours(0, 0, 0, 0);
+
+  if (dueDate.getTime() < today.getTime()) {
+    return "late";
+  }
+
+  const currentDayOfWeek = today.getDay();
+  const daysUntilSunday = currentDayOfWeek === 0 ? 0 : 7 - currentDayOfWeek;
+
+  const nextWeekStart = new Date(today);
+  nextWeekStart.setDate(today.getDate() + daysUntilSunday + 1);
+
+  if (dueDate.getTime() < nextWeekStart.getTime()) {
+    return "currentWeek";
+  }
+
+  const diffTime = Math.abs(dueDate.getTime() - today.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 7) {
+    return "soon";
+  }
+
+  return "later";
+}
+
+export function mapApiTaskToTaskProps(apiTask: ApiTaskJson): TaskProps {
+  const repetition =
+    apiTask.repetition !== null ? apiTask.repetition : undefined;
+  const dueDate = apiTask.dueDate || undefined;
+
+  const status = calculateDueDateStatus(dueDate);
+
+  return {
+    id: apiTask.id,
+    titre: apiTask.title,
+
+    action: () => console.log(`task done: ${apiTask.title}`),
+
+    dueDate: dueDate,
+    dueDateStatus: status,
+
+    done: apiTask.done,
+    repetition: repetition,
+    deactivated: apiTask.deactivated,
+    xp: apiTask.xp,
+  };
+}
+
+export async function completeTask(
+  taskId: number,
+  xpEarned: number,
+  userId: number
+): Promise<boolean> {
+  if (!API_URL) {
+    Alert.alert(
+      "Erreur de configuration",
+      "L'URL de l'API n'est pas définie (EXPO_PUBLIC_API_URL)."
+    );
+    return false;
+  }
+
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+
+    if (!token) {
+      Alert.alert(
+        "Erreur d'authentification",
+        "Token non trouvé. Veuillez vous reconnecter."
+      );
+      return false;
+    }
+
+    const apiPayload = {
+      xpEarned: xpEarned,
+      taskId: taskId,
+      userId: userId,
+    };
+
+    const response = await fetch(`${API_URL}/tasks/${taskId}/complete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(apiPayload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Erreur inconnue." }));
+
+      Alert.alert(
+        "Échec de la complétion",
+        errorData.message ||
+          `Erreur serveur: ${response.status} (${response.statusText})`
+      );
+      return false;
+    }
+
+    const responseData = await response.json();
+    const updatedTask = await mapApiTaskToTaskProps(responseData);
+
+    const cached = await AsyncStorage.getItem("tasks");
+    let tasks: TaskProps[] = [];
+    if (cached) {
+      const taskJson = JSON.parse(cached);
+      tasks = taskJson.map((t: any) => mapApiTaskToTaskProps(t));
+    }
+    tasks = tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t));
+    await AsyncStorage.setItem("tasks", JSON.stringify(tasks));
+
+    return true;
+  } catch (error) {
+    console.error("Erreur lors de l'appel API pour compléter la tâche:", error);
+    Alert.alert("Erreur de connexion", "Impossible de contacter le serveur.");
+    return false;
+  }
+}
 
 export default TaskComponent;
