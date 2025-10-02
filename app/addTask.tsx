@@ -87,6 +87,8 @@ const AddTaskScreen = () => {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "1",
+          "User-Agent": "MyApp/1.0.0",
         },
         body: JSON.stringify(apiPayload),
       });
@@ -101,14 +103,13 @@ const AddTaskScreen = () => {
         );
       }
       const responseData = await response.json();
-      const createdTask = await mapApiTaskToTaskProps(responseData);
+      const createdTask = mapApiTaskToTaskProps(responseData);
 
       const cached = await AsyncStorage.getItem("tasks");
       let tasks: TaskProps[] = [];
       if (cached) {
         const taskJson = JSON.parse(cached);
-        tasks = taskJson
-          .map((t: any) => mapApiTaskToTaskProps(t));
+        tasks = taskJson.map((t: any) => mapApiTaskToTaskProps(t));
       }
 
       tasks.push(createdTask);
