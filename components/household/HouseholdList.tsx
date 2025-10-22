@@ -349,7 +349,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         position: 'relative',
-        overflow: "hidden",
     },
     editButton: {
         position: 'absolute',
@@ -358,6 +357,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f39c12',
         borderRadius: 12,
         padding: 6,
+        zIndex: 1,
     },
     householdName: {
         fontSize: 20,
