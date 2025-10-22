@@ -79,12 +79,8 @@ export default function RankingComponent({ refreshTrigger }) {
             }
         };
 
-        useEffect(() => {
-            fetchRanking();
-        }, [refreshTrigger]);
-
         fetchRanking();
-    }, []);
+    }, [refreshTrigger]);
 
     const renderItem = ({ item, index }) => (
         <TouchableOpacity style={styles(theme).row} activeOpacity={0.7}>
