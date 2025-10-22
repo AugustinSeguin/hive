@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, FlatList, Image } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity, FlatList, Image, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
@@ -101,12 +101,20 @@ export default function HouseholdList() {
                     },
                     body: JSON.stringify({ name, avatarUrl: avatar || "" }),
                 });
-                if (!res.ok) throw new Error("Erreur création foyer");
+
+                if (!res.ok) {
+                    console.error("Erreur création foyer");
+                    Alert.alert("Erreur", "Impossible de créer le foyer. Veuillez réessayer plus tard.");
+                    return;
+                }
+
                 const data = await res.json();
                 setHouseholdId(data.id.toString());
                 await AsyncStorage.setItem("householdId", data.id.toString());
+
+                Alert.alert("Succès", "Le foyer a bien été créé.");
             } else {
-                // Édition
+                // Édition du foyer
                 const res = await fetch(`${apiUrl}/households/${householdId}`, {
                     method: "PUT",
                     headers: {
@@ -115,7 +123,14 @@ export default function HouseholdList() {
                     },
                     body: JSON.stringify({ name, avatarUrl: avatar || "" }),
                 });
-                if (!res.ok) throw new Error("Erreur édition foyer");
+
+                if (!res.ok) {
+                    console.error("Erreur édition foyer");
+                    Alert.alert("Erreur", "Impossible de modifier le foyer. Veuillez réessayer plus tard.");
+                    return;
+                }
+
+                Alert.alert("Succès", "Le foyer a bien été mis à jour");
             }
 
             setHouseholdName(name);
@@ -132,26 +147,44 @@ export default function HouseholdList() {
     const handleLeaveHousehold = async () => {
         try {
             const token = await AsyncStorage.getItem("userToken");
-            if (!token) return;
+            if (!token) {
+                Alert.alert("Erreur", "Vous devez être connecté pour quitter un foyer.");
+                return;
+            }
+
             const res = await fetch(`${apiUrl}/households/${householdId}/leave`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!res.ok) throw new Error("Erreur quitter foyer");
+
+            if (!res.ok) {
+                console.error("Erreur quitter foyer");
+                Alert.alert("Erreur", "Impossible de quitter le foyer. Veuillez réessayer plus tard.");
+                return;
+            }
+
+            // Suppression locale des données du foyer
             await AsyncStorage.multiRemove(["householdId", "householdName", "householdAvatar", "members"]);
             setHouseholdId(null);
             setHouseholdName(null);
             setAvatarUri(null);
             setMembers(defaultMembers);
+
+            Alert.alert("Succès", "Vous avez quitté le foyer.");
         } catch (e) {
             console.error("Erreur quitter foyer", e);
+            Alert.alert("Erreur", "Une erreur est survenue. Veuillez réessayer plus tard.");
         }
     };
 
     const handleJoinHousehold = async (id) => {
         try {
             const token = await AsyncStorage.getItem("userToken");
-            if (!token) return;
+            if (!token) {
+                Alert.alert("Erreur", "Vous devez être connecté pour rejoindre un foyer.");
+                return;
+            }
+
             const res = await fetch(`${apiUrl}/households/${id}/join`, {
                 method: "POST",
                 headers: {
@@ -160,15 +193,22 @@ export default function HouseholdList() {
                 },
             });
 
-            if (!res.ok) throw new Error("Erreur rejoindre foyer");
+            if (!res.ok) {
+                console.error("Erreur rejoindre foyer");
+                Alert.alert("Erreur", "Impossible de rejoindre le foyer. Veuillez vérifier l'ID ou réessayer plus tard.");
+                return;
+            }
 
             await AsyncStorage.setItem("householdId", id.toString());
             setHouseholdId(id.toString());
 
             setJoinModalVisible(false);
             await fetchData();
+
+            Alert.alert("Succès", "Vous avez rejoint le foyer !");
         } catch (e) {
             console.error("Erreur rejoindre foyer", e);
+            Alert.alert("Erreur", "Une erreur est survenue. Veuillez réessayer plus tard.");
         }
     };
 
