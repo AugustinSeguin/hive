@@ -6,7 +6,7 @@ import { Colors } from '@/constants/Colors';
 import Sizes from '@/constants/Sizes';
 import { Feather } from '@expo/vector-icons';
 import EditHouseholdModal from "@/components/household/EditHousehold";
-import { router } from 'expo-router';
+import JoinHouseholdModal from "@/components/household/JoinHousehold";
 
 const defaultMembers = [
     { id: '1', name: 'Lisaa', role: 'Le Boss', points: 1420, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Lisa' },
@@ -22,6 +22,7 @@ export default function HouseholdList() {
     const [householdName, setHouseholdName] = useState(null);
     const [avatarUri, setAvatarUri] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
+    const [joinModalVisible, setJoinModalVisible] = useState(false);
 
     const colorScheme = useColorScheme();
     const theme = Colors[colorScheme ?? "light"];
@@ -119,13 +120,40 @@ export default function HouseholdList() {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!res.ok) throw new Error("Erreur quitter foyer");
-            await AsyncStorage.multiRemove(["householdId", "householdName", "householdAvatar"]);
+            await AsyncStorage.multiRemove(["householdId", "householdName", "householdAvatar", "members"]);
             setHouseholdId(null);
             setHouseholdName(null);
             setAvatarUri(null);
             setMembers(defaultMembers);
         } catch (e) {
             console.error("Erreur quitter foyer", e);
+        }
+    };
+
+    const handleJoinHousehold = async (id) => {
+        try {
+            const token = await AsyncStorage.getItem("userToken");
+            const res = await fetch(`${apiUrl}/households/${id}/join`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) throw new Error("Erreur rejoindre foyer");
+
+            console.log("Rejoint le foyer :", id);
+
+            // ✅ Enregistre le nouveau foyer
+            await AsyncStorage.setItem("householdId", id.toString());
+            setHouseholdId(id.toString());
+
+            // ✅ Ferme le modal et recharge les vraies données
+            setJoinModalVisible(false);
+            await fetchData();
+        } catch (e) {
+            console.error("Erreur rejoindre foyer", e);
         }
     };
 
@@ -185,10 +213,17 @@ export default function HouseholdList() {
                         <Text style={styles.noHouseholdText}>
                             Crée ton premier foyer pour commencer à gérer tes membres 🎉
                         </Text>
-                        <TouchableOpacity style={styles.createButton} onPress={async () => { try { const token = await AsyncStorage.getItem("userToken"); if (!token) { router.push('/login'); return; } setModalVisible(true); } catch { router.push('/login'); } }}>
-                            <Feather name="plus-circle" size={18} color="#fff" />
-                            <Text style={styles.createButtonText}>Créer un foyer</Text>
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                            <TouchableOpacity style={styles.createButton} onPress={() => setModalVisible(true)}>
+                                <Feather name="plus-circle" size={18} color="#fff" />
+                                <Text style={styles.createButtonText}>Créer un foyer</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.createButton, { backgroundColor: '#2980b9' }]} onPress={() => setJoinModalVisible(true)}>
+                                <Feather name="log-in" size={18} color="#fff" />
+                                <Text style={styles.createButtonText}>Rejoindre un foyer</Text>
+                            </TouchableOpacity>
+                        </View>
+
                     </>
                 )}
             </View>
@@ -211,6 +246,12 @@ export default function HouseholdList() {
                 initialName={householdName || ""}
                 initialAvatar={avatarUri}
                 onSave={handleSaveHousehold}
+            />
+
+            <JoinHouseholdModal
+                visible={joinModalVisible}
+                onClose={() => setJoinModalVisible(false)}
+                onJoin={handleJoinHousehold}
             />
         </>
     );
