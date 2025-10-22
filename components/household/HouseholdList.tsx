@@ -143,13 +143,9 @@ export default function HouseholdList() {
 
             if (!res.ok) throw new Error("Erreur rejoindre foyer");
 
-            console.log("Rejoint le foyer :", id);
-
-            // ✅ Enregistre le nouveau foyer
             await AsyncStorage.setItem("householdId", id.toString());
             setHouseholdId(id.toString());
 
-            // ✅ Ferme le modal et recharge les vraies données
             setJoinModalVisible(false);
             await fetchData();
         } catch (e) {
