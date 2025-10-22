@@ -221,10 +221,10 @@ export default function HomeScreen() {
           updatedTasks[index] = updatedTask;
 
           await AsyncStorage.setItem("tasks", JSON.stringify(updatedTasks));
-          const url = `${API_URL}/tasks/${id}`;
           const token = await AsyncStorage.getItem("userToken");
 
-          await fetch(url, {
+          // 1) Update task status (deactivated flag) on server
+          await fetch(`${API_URL}/tasks/${id}`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -241,6 +241,24 @@ export default function HomeScreen() {
               xp: updatedTask.xp,
             }),
           });
+
+          // 2) If marking as completed, record completion to award points to current user
+          if (updatedTask.deactivated === true) {
+            try {
+              await fetch(`${API_URL}/tasks/${id}/complete`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: token ? `Bearer ${token}` : "",
+                  "ngrok-skip-browser-warning": "1",
+                  "User-Agent": "MyApp/1.0.0",
+                },
+              });
+            } catch (e) {
+              // noop: points might not be awarded if offline, but state is updated locally
+              console.warn('Failed to record completion', e);
+            }
+          }
 
           const {
             lateTasks,
