@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Alert, SectionList, StyleSheet, View } from "react-native";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import ButtonComponent from "@/components/ButtonComponent";
-import TaskComponent from "@/components/TaskComponent";
 import type { TaskProps } from "@/components/TaskComponent";
+import TaskComponent from "@/components/TaskComponent";
 import { ThemedText } from "@/components/ThemedText";
-import { applyNotificationPreferences } from "@/services/notifications";
-import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
+import { router } from "expo-router";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -19,8 +18,13 @@ function filterTasksByDate(tasks: TaskProps[]) {
   const soonTasks: TaskProps[] = [];
   const currentWeekTasks: TaskProps[] = [];
   const laterTasks: TaskProps[] = [];
+  const deactivatedTasks: TaskProps[] = [];
 
   for (const task of tasks) {
+    if (task.deactivated) {
+      deactivatedTasks.push(task);
+      continue;
+    }
     if (!task.dueDate) continue;
     const dueDate = new Date(task.dueDate);
     dueDate.setHours(0, 0, 0, 0);
@@ -37,7 +41,13 @@ function filterTasksByDate(tasks: TaskProps[]) {
       laterTasks.push(task);
     }
   }
-  return { lateTasks, soonTasks, currentWeekTasks, laterTasks };
+  return {
+    lateTasks,
+    soonTasks,
+    currentWeekTasks,
+    laterTasks,
+    deactivatedTasks,
+  };
 }
 
 export default function HomeScreen() {
@@ -45,10 +55,10 @@ export default function HomeScreen() {
   const [soonTasks, setSoonTasks] = useState<TaskProps[]>([]);
   const [currentWeekTasks, setCurrentWeekTasks] = useState<TaskProps[]>([]);
   const [laterTasks, setLaterTasks] = useState<TaskProps[]>([]);
+  const [deactivatedTasks, setDeactivatedTasks] = useState<TaskProps[]>([]);
 
   const fetchTasks = async () => {
     try {
-      let cached = await AsyncStorage.getItem("tasks");
       const token = await AsyncStorage.getItem("userToken");
       let tasks: TaskProps[] = [];
       if (!token) {
@@ -70,18 +80,24 @@ export default function HomeScreen() {
       });
 
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ message: "Erreur inconnue." }));
-
         Alert.alert(
-          "Échec de la complétion",
-          errorData.message ||
-            `Erreur serveur: ${response.status} (${response.statusText})`
+          "OOPS...",
+          "Une erreur est survenue lors de la récupération des tâches."
         );
         return false;
       }
-      await AsyncStorage.setItem("tasks", JSON.stringify(tasks));
+      const rawTasks = await response.json();
+
+      tasks = rawTasks.map((t: any) => ({
+        id: t.id,
+        titre: t.title ?? t.titre ?? "",
+        repetition: t.repetition ?? 1,
+        dueDate: t.dueDate ?? null,
+        deactivated: t.deactivated ?? false,
+        xp: t.xp ?? 0,
+        dueDateStatus: undefined as any,
+        action: () => {},
+      }));
 
       tasks.sort((a, b) => {
         if (a.dueDate && b.dueDate) {
@@ -89,30 +105,38 @@ export default function HomeScreen() {
         }
         return 0;
       });
-      const { lateTasks, soonTasks, currentWeekTasks, laterTasks } =
-        filterTasksByDate(tasks);
+      const {
+        lateTasks,
+        soonTasks,
+        currentWeekTasks,
+        laterTasks,
+        deactivatedTasks,
+      } = filterTasksByDate(tasks);
 
       setLateTasks(lateTasks);
       setSoonTasks(soonTasks);
       setCurrentWeekTasks(currentWeekTasks);
       setLaterTasks(laterTasks);
-
-      try {
-        await applyNotificationPreferences(tasks);
-      } catch (e) {
-        console.warn('[notifications] apply preferences failed', e);
-      }
+      setDeactivatedTasks(deactivatedTasks);
+      await AsyncStorage.setItem("tasks", JSON.stringify(tasks));
     } catch (e) {
-     const cached = await AsyncStorage.getItem("tasks");
+      const cached = await AsyncStorage.getItem("tasks");
       if (!cached) return;
       const tasks = JSON.parse(cached);
-      const { lateTasks, soonTasks, currentWeekTasks, laterTasks } =
-        filterTasksByDate(tasks);
+      const {
+        lateTasks,
+        soonTasks,
+        currentWeekTasks,
+        laterTasks,
+        deactivatedTasks,
+      } = filterTasksByDate(tasks);
 
       setLateTasks(lateTasks);
       setSoonTasks(soonTasks);
       setCurrentWeekTasks(currentWeekTasks);
       setLaterTasks(laterTasks);
+      setDeactivatedTasks(deactivatedTasks);
+
       console.error(e);
     }
   };
@@ -132,31 +156,43 @@ export default function HomeScreen() {
     { title: "Proche échéance", data: soonTasks },
     { title: "Cette semaine", data: currentWeekTasks },
     { title: "Ce mois", data: laterTasks },
+    { title: "Terminé", data: deactivatedTasks },
   ].filter((section) => section.data.length > 0);
 
   return (
     <View style={{ flex: 1 }}>
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => `${item.id}-${item.done}`}
-        renderItem={({ item }) => (
-          <TaskComponent
-            {...item}
-            action={async () => {
-              await updateTask(item.id);
-              await fetchTasks();
-            }}
-            onLongPress={() => {
-              if (item.id != null) {
-                router.push(`/editTask?id=${item.id}`);
-              }
-            }}
-          />
-        )}
-        renderSectionHeader={({ section }) => (
-          <ThemedText style={styles.sectionHeader}>{section.title}</ThemedText>
-        )}
-      />
+      {sections.length === 0 ? (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ThemedText style={{ fontSize: 16 }}>
+            Rien à voir pour l'instant
+          </ThemedText>
+        </View>
+      ) : (
+        <SectionList
+          sections={sections}
+          keyExtractor={(item) => `${item.id}-${item.deactivated}`}
+          renderItem={({ item }) => (
+            <TaskComponent
+              {...item}
+              action={async () => {
+                await toggleTask(item.id);
+              }}
+              onLongPress={() => {
+                if (item.id != null) {
+                  router.push(`/editTask?id=${item.id}`);
+                }
+              }}
+            />
+          )}
+          renderSectionHeader={({ section }) => (
+            <ThemedText style={styles.sectionHeader}>
+              {section.title}
+            </ThemedText>
+          )}
+        />
+      )}
       <ButtonComponent
         type="secondary"
         titre="+"
@@ -167,50 +203,54 @@ export default function HomeScreen() {
       />
     </View>
   );
-}
 
-async function updateTask(id: number | undefined | null) {
-  if (id == null) return;
-  try {
-    const cached = await AsyncStorage.getItem("tasks");
-    if (!cached) return;
-    const tasks = JSON.parse(cached);
-    let updatedTask = null;
-    const updatedTasks = tasks.map((task: any) => {
-      if (task.id === id) {
-        updatedTask = { ...task, done: !task.done };
-        console.log(
-          `[updateTask] toggling done for id=${id} (avant: ${
-            task.done
-          }, après: ${!task.done})`
-        );
-        return updatedTask;
-      }
-      return task;
-    });
-    await AsyncStorage.setItem("tasks", JSON.stringify(updatedTasks));
-
-    if (updatedTask) {
-      const url = `${API_URL}/tasks/${id}`;
-      try {
-        await fetch(url, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedTask),
-        });
-        console.log(`[updateTask] PUT sent to API for id=${id}`);
-      } catch (err) {
-        console.error(`[updateTask] PUT failed for id=${id}`, err);
-      }
-    }
-
+  async function toggleTask(id: number | undefined | null) {
+    if (id == null) return;
     try {
-      await applyNotificationPreferences(updatedTasks);
+      const cached = await AsyncStorage.getItem("tasks");
+      if (cached) {
+        const tasks = JSON.parse(cached);
+        const index = tasks.findIndex((task: any) => task.id === id);
+        if (index !== -1) {
+          let updatedTask = {
+            ...tasks[index],
+            deactivated: !tasks[index].deactivated,
+          };
+
+          const updatedTasks = [...tasks];
+          updatedTasks[index] = updatedTask;
+
+          await AsyncStorage.setItem("tasks", JSON.stringify(updatedTasks));
+          const householdId = await AsyncStorage.getItem("householdId");
+          updatedTask.householdId = householdId
+            ? JSON.parse(householdId)
+            : null;
+          const url = `${API_URL}/tasks/${id}`;
+
+          const response = await fetch(url, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedTask),
+          });
+
+          const {
+            lateTasks,
+            soonTasks,
+            currentWeekTasks,
+            laterTasks,
+            deactivatedTasks,
+          } = filterTasksByDate(updatedTasks);
+          setLateTasks(lateTasks);
+          setSoonTasks(soonTasks);
+          setCurrentWeekTasks(currentWeekTasks);
+          setLaterTasks(laterTasks);
+          setDeactivatedTasks(deactivatedTasks);
+        }
+      }
     } catch (e) {
-      console.warn('[notifications] re-apply after update failed', e);
+      Alert.alert("OOPS...", "Une erreur est survenue lors de la mise à jour.");
+      console.error("Erreur lors de la mise à jour de la tâche", e);
     }
-  } catch (e) {
-    console.error("Erreur lors de la mise à jour de la tâche", e);
   }
 }
 

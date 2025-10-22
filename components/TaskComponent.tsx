@@ -22,7 +22,7 @@ export type TaskProps = {
   onLongPress?: () => void;
   titre: string;
   dueDate: string | undefined;
-  done?: boolean;
+  deactivated?: boolean;
   repetition?: number | undefined;
   deactivated?: boolean;
   xp?: number | undefined;
@@ -113,7 +113,7 @@ function getStyles(colorScheme: "light" | "dark") {
       justifyContent: "center",
       alignItems: "center",
     },
-    checkCircleDone: {
+    checkCircleDeactivated: {
       borderColor: theme.tint,
       backgroundColor: theme.background,
     },
@@ -121,7 +121,7 @@ function getStyles(colorScheme: "light" | "dark") {
 }
 
 const TaskComponent: React.FC<TaskProps> = React.memo(
-  ({ action, onLongPress, titre, dueDate, dueDateStatus, done, xp }) => {
+  ({ action, onLongPress, titre, dueDate, dueDateStatus, deactivated, xp }) => {
     const colorScheme = useColorScheme() ?? "light";
     const styles = getStyles(colorScheme);
     const borderColor = getBorderColor(dueDateStatus, colorScheme);
@@ -134,7 +134,7 @@ const TaskComponent: React.FC<TaskProps> = React.memo(
         style={[
           styles.card,
           { borderLeftColor: borderColor },
-          done && { opacity: 0.5 },
+          deactivated && { opacity: 0.5 },
         ]}
         activeOpacity={0.8}
       >
@@ -173,8 +173,13 @@ const TaskComponent: React.FC<TaskProps> = React.memo(
             </View>
           </View>
           <View style={styles.checkContainer}>
-            <View style={[styles.checkCircle, done && styles.checkCircleDone]}>
-              {done && (
+            <View
+              style={[
+                styles.checkCircle,
+                deactivated && styles.checkCircleDeactivated,
+              ]}
+            >
+              {deactivated && (
                 <Ionicons
                   name="checkmark"
                   size={20}
@@ -188,7 +193,7 @@ const TaskComponent: React.FC<TaskProps> = React.memo(
     );
   },
   (prevProps, nextProps) =>
-    prevProps.done === nextProps.done &&
+    prevProps.deactivated === nextProps.deactivated &&
     prevProps.xp === nextProps.xp &&
     prevProps.titre === nextProps.titre &&
     prevProps.dueDate === nextProps.dueDate
@@ -201,7 +206,7 @@ export type ApiTaskJson = {
   dueDate: string | null;
   deactivated: boolean;
   xp: number;
-  done?: boolean;
+  deactivated?: boolean;
 };
 
 function calculateDueDateStatus(
@@ -250,12 +255,12 @@ export function mapApiTaskToTaskProps(apiTask: ApiTaskJson): TaskProps {
     id: apiTask.id,
     titre: apiTask.title,
 
-    action: () => console.log(`task done: ${apiTask.title}`),
+    action: () => console.log(`task deactivated: ${apiTask.title}`),
 
     dueDate: dueDate,
     dueDateStatus: status,
 
-    done: apiTask.done,
+    deactivated: apiTask.deactivated,
     repetition: repetition,
     deactivated: apiTask.deactivated,
     xp: apiTask.xp,

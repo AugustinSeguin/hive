@@ -62,6 +62,7 @@ const AddTaskScreen = () => {
 
     try {
       const token = await AsyncStorage.getItem("userToken");
+      console.log('token', token);
       if (!token) {
         Alert.alert("Erreur d'authentification", "Vous n'êtes pas connecté.");
         router.replace("/login");
@@ -81,6 +82,7 @@ const AddTaskScreen = () => {
         dueDate:
           type === "one-shot" && dueDate ? dueDate.toISOString() : undefined,
       };
+      console.log('apiPayload', apiPayload);
 
       const response = await fetch(`${API_URL}/tasks`, {
         method: "POST",
