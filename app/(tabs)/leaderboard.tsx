@@ -10,7 +10,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 export default function Leaderboard() {
     const colorScheme = useColorScheme();
     const theme = Colors[colorScheme ?? 'light'];
-    const isFocused = useIsFocused(); // <-- focus de l'écran
+    const isFocused = useIsFocused();
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
