@@ -7,6 +7,7 @@ import Sizes from '@/constants/Sizes';
 import { Feather } from '@expo/vector-icons';
 import EditHouseholdModal from "@/components/household/EditHousehold";
 import JoinHouseholdModal from "@/components/household/JoinHousehold";
+import { useRouter } from "expo-router";
 
 const defaultMembers = [
     { id: '1', name: 'Lisaa', role: 'Le Boss', points: 1420, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Lisa' },
@@ -23,6 +24,8 @@ export default function HouseholdList() {
     const [avatarUri, setAvatarUri] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [joinModalVisible, setJoinModalVisible] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const router = useRouter();
 
     const colorScheme = useColorScheme();
     const theme = Colors[colorScheme ?? "light"];
@@ -30,6 +33,17 @@ export default function HouseholdList() {
     const fetchData = async () => {
         try {
             const token = await AsyncStorage.getItem("userToken");
+
+            if (!token) {
+                setIsLoggedIn(false);
+                setMembers(defaultMembers);
+                setHouseholdId(null);
+                setHouseholdName(null);
+                setAvatarUri(null);
+                return;
+            }
+
+            setIsLoggedIn(true);
             const storedId = await AsyncStorage.getItem("householdId");
 
             if (storedId) {
@@ -60,6 +74,8 @@ export default function HouseholdList() {
                 }
             } else {
                 setMembers(defaultMembers);
+                setHouseholdName(null);
+                setAvatarUri(null);
             }
         } catch (e) {
             console.error("Erreur lors du chargement des données", e);
@@ -73,6 +89,7 @@ export default function HouseholdList() {
     const handleSaveHousehold = async ({ name, avatar }) => {
         try {
             const token = await AsyncStorage.getItem("userToken");
+            if (!token) return;
 
             if (!householdId) {
                 // Création du foyer
@@ -89,7 +106,7 @@ export default function HouseholdList() {
                 setHouseholdId(data.id.toString());
                 await AsyncStorage.setItem("householdId", data.id.toString());
             } else {
-                // Edition du foyer
+                // Édition
                 const res = await fetch(`${apiUrl}/households/${householdId}`, {
                     method: "PUT",
                     headers: {
@@ -115,6 +132,7 @@ export default function HouseholdList() {
     const handleLeaveHousehold = async () => {
         try {
             const token = await AsyncStorage.getItem("userToken");
+            if (!token) return;
             const res = await fetch(`${apiUrl}/households/${householdId}/leave`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
@@ -133,6 +151,7 @@ export default function HouseholdList() {
     const handleJoinHousehold = async (id) => {
         try {
             const token = await AsyncStorage.getItem("userToken");
+            if (!token) return;
             const res = await fetch(`${apiUrl}/households/${id}/join`, {
                 method: "POST",
                 headers: {
@@ -175,7 +194,31 @@ export default function HouseholdList() {
     return (
         <>
             <View style={styles.header}>
-                {householdId ? (
+                {!isLoggedIn ? (
+                    <>
+                        <Text style={styles.noHouseholdTitle}>Bienvenue !</Text>
+                        <Text style={styles.noHouseholdText}>
+                            Connecte-toi ou crée un compte pour créer ou rejoindre un foyer.
+                        </Text>
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                            <TouchableOpacity
+                                style={styles.createButton}
+                                onPress={() => router.push("/login")}
+                            >
+                                <Feather name="log-in" size={18} color="#fff" />
+                                <Text style={styles.createButtonText}>Se connecter</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.createButton, { backgroundColor: '#2980b9' }]}
+                                onPress={() => router.push("/register")}
+                            >
+                                <Feather name="user-plus" size={18} color="#fff" />
+                                <Text style={styles.createButtonText}>S'inscrire</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </>
+                ) : householdId ? (
                     <>
                         <View style={styles.mainAvatar}>
                             {avatarUri ? (
@@ -219,7 +262,6 @@ export default function HouseholdList() {
                                 <Text style={styles.createButtonText}>Rejoindre un foyer</Text>
                             </TouchableOpacity>
                         </View>
-
                     </>
                 )}
             </View>
@@ -252,7 +294,6 @@ export default function HouseholdList() {
         </>
     );
 }
-
 
 const styles = StyleSheet.create({
     header: {
