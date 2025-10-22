@@ -221,18 +221,26 @@ export default function HomeScreen() {
           updatedTasks[index] = updatedTask;
 
           await AsyncStorage.setItem("tasks", JSON.stringify(updatedTasks));
-          const householdId = await AsyncStorage.getItem("householdId");
-          updatedTask.householdId = householdId
-            ? JSON.parse(householdId)
-            : null;
+
           const url = `${API_URL}/tasks/${id}`;
+          const token = await AsyncStorage.getItem("userToken");
+          if (!token) {
+            Alert.alert(
+              "Erreur d'authentification",
+              "Token non trouvé. Veuillez vous reconnecter."
+            );
+            return false;
+          }
 
-          const response = await fetch(url, {
+          await fetch(url, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedTask),
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+              "ngrok-skip-browser-warning": "1",
+              "User-Agent": "MyApp/1.0.0",
+            },
           });
-
           const {
             lateTasks,
             soonTasks,
