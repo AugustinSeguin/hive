@@ -203,6 +203,36 @@ export default function HouseholdList() {
             setHouseholdId(id.toString());
 
             setJoinModalVisible(false);
+            // Transférer d'éventuelles tâches locales vers le foyer
+            try {
+                const cachedLocal = await AsyncStorage.getItem("tasks_local");
+                const localTasks = cachedLocal ? JSON.parse(cachedLocal) : [];
+                if (Array.isArray(localTasks) && localTasks.length > 0) {
+                    for (const t of localTasks) {
+                        try {
+                            const payload = {
+                                title: t.title ?? t.titre ?? '',
+                                repetition: t.repetition ?? 1,
+                                dueDate: t.dueDate ?? null,
+                                deactivated: !!t.deactivated,
+                                xp: t.xp ?? 0,
+                            };
+                            await fetch(`${apiUrl}/tasks`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    Authorization: `Bearer ${token}`,
+                                },
+                                body: JSON.stringify(payload),
+                            });
+                        } catch (e) {
+                            console.warn('Transfert tâche locale échoué', e);
+                        }
+                    }
+                    await AsyncStorage.removeItem('tasks_local');
+                }
+            } catch {}
+
             await fetchData();
 
             Alert.alert("Succès", "Vous avez rejoint le foyer !");

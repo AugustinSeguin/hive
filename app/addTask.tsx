@@ -84,6 +84,27 @@ const AddTaskScreen = () => {
       };
       console.log('apiPayload', apiPayload);
 
+      // Si l'utilisateur n'est pas dans un foyer, stocker la tache en local
+      const householdId = await AsyncStorage.getItem("householdId");
+      if (!householdId) {
+        const localTask: TaskProps = {
+          id: Date.now(),
+          repetition: repetitionValue,
+          deactivated: false,
+          xp: xpValue,
+          dueDateStatus: undefined as any,
+          action: () => {},
+          titre: name,
+          dueDate: type === "one-shot" && dueDate ? dueDate.toISOString() : undefined,
+        } as any;
+        const cachedLocal = await AsyncStorage.getItem("tasks_local");
+        let localTasks: TaskProps[] = cachedLocal ? JSON.parse(cachedLocal) : [];
+        localTasks.push(localTask);
+        await AsyncStorage.setItem("tasks_local", JSON.stringify(localTasks));
+        router.back();
+        return;
+      }
+
       const response = await fetch(`${API_URL}/tasks`, {
         method: "POST",
         headers: {
@@ -97,6 +118,25 @@ const AddTaskScreen = () => {
 
       console.log("Response status:", response);
       if (!response.ok) {
+        // Si refus (par ex. pas dans un foyer), bascule locale
+        if (response.status === 401 || response.status === 403) {
+          const localTask: TaskProps = {
+            id: Date.now(),
+            repetition: repetitionValue,
+            deactivated: false,
+            xp: xpValue,
+            dueDateStatus: undefined as any,
+            action: () => {},
+            titre: name,
+            dueDate: type === "one-shot" && dueDate ? dueDate.toISOString() : undefined,
+          } as any;
+          const cachedLocal = await AsyncStorage.getItem("tasks_local");
+          let localTasks: TaskProps[] = cachedLocal ? JSON.parse(cachedLocal) : [];
+          localTasks.push(localTask);
+          await AsyncStorage.setItem("tasks_local", JSON.stringify(localTasks));
+          router.back();
+          return;
+        }
         const errorData = await response
           .json()
           .catch(() => ({ message: "Erreur inconnue." }));
