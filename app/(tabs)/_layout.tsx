@@ -10,6 +10,7 @@ function HeaderActions() {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? 'light'];
 
   useEffect(() => {
     (async () => {
@@ -29,7 +30,7 @@ function HeaderActions() {
 
   const size = 32;
   const iconSize = 24;
-  const iconColor = colorScheme === 'dark' ? '#fff' : '#000';
+  const iconColor = theme.text;
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -61,6 +62,7 @@ function HeaderActions() {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? 'light'];
 
   return (
     <Tabs initialRouteName="index"
@@ -73,9 +75,13 @@ export default function TabLayout() {
           else if (route.name === 'household') iconName = 'home-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tabIconSelected,
-        tabBarInactiveTintColor: Colors[colorScheme ?? 'light'].tabIconDefault,
+        tabBarActiveTintColor: theme.tabIconSelected,
+        tabBarInactiveTintColor: theme.tabIconDefault,
+        tabBarStyle: { backgroundColor: theme.background, borderTopColor: theme.separator },
         headerShown: true,
+        headerStyle: { backgroundColor: theme.background },
+        headerTitleStyle: { color: theme.text },
+        headerTintColor: theme.text,
         headerRight: () => <HeaderActions />,
       })}
     >

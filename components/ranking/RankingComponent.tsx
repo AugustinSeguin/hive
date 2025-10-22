@@ -10,6 +10,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import Sizes from '@/constants/Sizes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -23,7 +24,8 @@ const DEFAULT_DATA = [
 ];
 
 export default function RankingComponent({ refreshTrigger }) {
-    const theme = Colors['light'];
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? 'light'];
 
     const [ranking, setRanking] = useState(DEFAULT_DATA);
     const [loading, setLoading] = useState(true);

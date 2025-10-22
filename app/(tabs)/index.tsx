@@ -4,6 +4,8 @@ import { SectionList, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ButtonComponent from "@/components/ButtonComponent";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { Colors } from "@/constants/Colors";
 import TaskComponent from "@/components/TaskComponent";
 import type { TaskProps } from "@/components/TaskComponent";
 import { ThemedText } from "@/components/ThemedText";
@@ -135,6 +137,8 @@ function filterTasksByDate(tasks: TaskProps[]) {
 }
 
 export default function HomeScreen() {
+  const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? 'light'];
   const [lateTasks, setLateTasks] = useState<TaskProps[]>([]);
   const [soonTasks, setSoonTasks] = useState<TaskProps[]>([]);
   const [currentWeekTasks, setCurrentWeekTasks] = useState<TaskProps[]>([]);
@@ -197,7 +201,7 @@ export default function HomeScreen() {
   ].filter((section) => section.data.length > 0);
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <SectionList
         sections={sections}
         keyExtractor={(item) => `${item.id}-${item.done}`}

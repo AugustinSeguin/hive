@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Switch, StyleSheet, TouchableOpacity } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemePreference } from '@/context/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import Sizes from '@/constants/Sizes';
 import { getNotificationSettings, saveNotificationSettings, NotificationSettings } from '@/services/settings';
@@ -13,6 +14,7 @@ export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
   const [prefs, setPrefs] = useState<NotificationSettings | null>(null);
+  const { colorScheme: effectiveTheme, toggleLightDark } = useThemePreference();
 
   useEffect(() => {
     (async () => {
@@ -32,6 +34,12 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }] }>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Apparence</Text>
+      <View style={styles.row}>
+        <Text style={[styles.label, { color: theme.text }]}>Thème sombre</Text>
+        <Switch value={effectiveTheme === 'dark'} onValueChange={toggleLightDark} />
+      </View>
+
       <Text style={[styles.sectionTitle, { color: theme.text }]}>Rappels de fond</Text>
       <View style={styles.row}>
         <Text style={[styles.label, { color: theme.text }]}>Activer</Text>
