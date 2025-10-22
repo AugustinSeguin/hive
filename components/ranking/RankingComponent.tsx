@@ -71,7 +71,6 @@ export default function RankingComponent({ refreshTrigger }) {
                 setRanking(formatted);
                 setHasRealData(true);
             } catch (err) {
-                console.error('Erreur chargement classement :', err);
                 setRanking(DEFAULT_DATA);
                 setHasRealData(false);
             } finally {
