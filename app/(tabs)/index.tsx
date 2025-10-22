@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Alert, SectionList, StyleSheet, View } from "react-native";
 
 import ButtonComponent from "@/components/ButtonComponent";
@@ -221,16 +221,25 @@ export default function HomeScreen() {
           updatedTasks[index] = updatedTask;
 
           await AsyncStorage.setItem("tasks", JSON.stringify(updatedTasks));
-          const householdId = await AsyncStorage.getItem("householdId");
-          updatedTask.householdId = householdId
-            ? JSON.parse(householdId)
-            : null;
           const url = `${API_URL}/tasks/${id}`;
+          const token = await AsyncStorage.getItem("userToken");
 
-          const response = await fetch(url, {
+          await fetch(url, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedTask),
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : "",
+              "ngrok-skip-browser-warning": "1",
+              "User-Agent": "MyApp/1.0.0",
+            },
+            // Do not allow client to change householdId
+            body: JSON.stringify({
+              title: updatedTask.title ?? updatedTask.titre,
+              repetition: updatedTask.repetition,
+              dueDate: updatedTask.dueDate,
+              deactivated: updatedTask.deactivated,
+              xp: updatedTask.xp,
+            }),
           });
 
           const {
@@ -276,3 +285,4 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
 });
+

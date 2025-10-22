@@ -110,8 +110,8 @@ const AddTaskScreen = () => {
       const cached = await AsyncStorage.getItem("tasks");
       let tasks: TaskProps[] = [];
       if (cached) {
-        const taskJson = JSON.parse(cached);
-        tasks = taskJson.map((t: any) => mapApiTaskToTaskProps(t));
+        // Conserver le format TaskProps tel que stocké par l'app
+        tasks = JSON.parse(cached);
       }
 
       tasks.push(createdTask);
