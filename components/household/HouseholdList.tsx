@@ -303,10 +303,6 @@ export default function HouseholdList({ refreshTrigger }) {
                         <Text style={styles.householdName}>{householdName || "Nom du foyer"}</Text>
                         <Text style={[styles.membersCount, { color: theme.secondary }]}>{members.length} membres</Text>
                         <View style={{ flexDirection: 'row', gap: 10 }}>
-                            <TouchableOpacity style={styles.shareButton}>
-                                <Feather name="share-2" size={16} color="#000" />
-                                <Text style={styles.shareText}>Partager</Text>
-                            </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.createButton, { backgroundColor: "#e74c3c" }]}
                                 onPress={handleLeaveHousehold}
