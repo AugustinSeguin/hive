@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -7,10 +7,13 @@ import {
     StyleSheet,
     TouchableOpacity,
     SafeAreaView,
-    useColorScheme,
+    ActivityIndicator,
 } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import Sizes from '@/constants/Sizes';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 const DEFAULT_DATA = [
     { id: '1', name: 'Lisa', points: 1420, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Lisa' },
@@ -19,9 +22,65 @@ const DEFAULT_DATA = [
     { id: '4', name: 'Tim', points: 1200, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Tim' },
 ];
 
-export default function RankingComponent({ data = DEFAULT_DATA }) {
-    const colorScheme = useColorScheme();
-    const theme = Colors[colorScheme ?? 'light'];
+export default function RankingComponent() {
+    const theme = Colors['light'];
+
+    const [ranking, setRanking] = useState(DEFAULT_DATA);
+    const [loading, setLoading] = useState(true);
+    const [hasRealData, setHasRealData] = useState(false);
+
+    useEffect(() => {
+        const fetchRanking = async () => {
+            try {
+                const token = await AsyncStorage.getItem('userToken');
+                const householdId = await AsyncStorage.getItem('householdId');
+
+                if (!token || !householdId) {
+                    setRanking(DEFAULT_DATA);
+                    setHasRealData(false);
+                    setLoading(false);
+                    return;
+                }
+
+                const res = await fetch(`${apiUrl}/households/${householdId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (!res.ok) throw new Error('Erreur de récupération du classement');
+                const data = await res.json();
+
+                if (!data.members || data.members.length === 0) {
+                    setRanking(DEFAULT_DATA);
+                    setHasRealData(false);
+                    setLoading(false);
+                    return;
+                }
+
+                const formatted = data.members.map((m) => ({
+                    id: m.id.toString(),
+                    name: m.pseudo,
+                    points: m.points || 0,
+                    avatar:
+                        m.avatarUrl ||
+                        `https://api.dicebear.com/7.x/adventurer/png?seed=${m.pseudo}`,
+                }));
+
+                formatted.sort((a, b) => b.points - a.points);
+                setRanking(formatted);
+                setHasRealData(true);
+            } catch (err) {
+                console.error('Erreur chargement classement :', err);
+                setRanking(DEFAULT_DATA);
+                setHasRealData(false);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRanking();
+    }, []);
 
     const renderItem = ({ item, index }) => (
         <TouchableOpacity style={styles(theme).row} activeOpacity={0.7}>
@@ -42,10 +101,23 @@ export default function RankingComponent({ data = DEFAULT_DATA }) {
         </TouchableOpacity>
     );
 
+    if (loading) {
+        return (
+            <View style={[styles(theme).container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={theme.text} />
+            </View>
+        );
+    }
+
     return (
         <SafeAreaView style={styles(theme).container}>
+            {!hasRealData && (
+                <Text style={styles(theme).demoText}>
+                    Ceci est un classement de démonstration, crée ou rejoins un foyer pour avoir accès à ton classement !
+                </Text>
+            )}
             <FlatList
-                data={data.sort((a, b) => b.points - a.points)}
+                data={ranking}
                 keyExtractor={(item) => item.id}
                 renderItem={renderItem}
                 ItemSeparatorComponent={() => <View style={styles(theme).sep} />}
@@ -58,7 +130,6 @@ const styles = (theme: typeof Colors.light | typeof Colors.dark) =>
     StyleSheet.create({
         container: {
             flex: 1,
-            flexGrow: 1,
             width: '100%',
             backgroundColor: theme.background,
             paddingVertical: Sizes.SPACING_MD,
@@ -121,5 +192,11 @@ const styles = (theme: typeof Colors.light | typeof Colors.dark) =>
             height: StyleSheet.hairlineWidth,
             backgroundColor: theme.separator,
             marginHorizontal: Sizes.SPACING_MD,
+        },
+        demoText: {
+            textAlign: 'center',
+            marginBottom: 10,
+            color: theme.secondary,
+            paddingHorizontal: Sizes.SPACING_MD,
         },
     });
