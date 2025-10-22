@@ -5,6 +5,7 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { Colors } from "@/constants/Colors";
 import Sizes from "@/constants/Sizes";
 import { router } from "expo-router";
+import { useIsFocused } from '@react-navigation/native';
 
 type UserProfile = {
   pseudo?: string;
@@ -12,25 +13,50 @@ type UserProfile = {
   avatarUri?: string | null;
 };
 
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [urlModalVisible, setUrlModalVisible] = useState(false);
   const [avatarInput, setAvatarInput] = useState("");
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
+  const isFocused = useIsFocused();
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const raw = await AsyncStorage.getItem("userProfile");
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          setProfile(parsed);
-          setAvatarInput(parsed?.avatarUri ?? "");
+    const loadProfile = async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            if (!token) return;
+
+            const res = await fetch(`${apiUrl}/me`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!res.ok) throw new Error('Erreur récupération profil');
+
+            const data = await res.json();
+            const profileData: UserProfile = {
+                pseudo: data.pseudo,
+                email: data.email,
+                avatarUri: data.avatarUrl,
+            };
+
+            setProfile(profileData);
+            setAvatarInput(profileData.avatarUri || '');
+            await AsyncStorage.setItem('userProfile', JSON.stringify(profileData));
+        } catch (err) {
+            console.error('Erreur chargement profil:', err);
+            // fallback vers AsyncStorage
+            const raw = await AsyncStorage.getItem('userProfile');
+            if (raw) setProfile(JSON.parse(raw));
         }
-      } catch {}
-    })();
-  }, []);
+    };
+
+    useEffect(() => {
+        if (isFocused) {
+            loadProfile();
+        }
+    }, [isFocused]);
 
   const logout = async () => {
     try {

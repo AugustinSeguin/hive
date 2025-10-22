@@ -16,7 +16,7 @@ const defaultMembers = [
     { id: '4', name: 'Tim', role: "L'aventurier", points: 1200, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Tim' },
 ];
 
-export default function HouseholdList() {
+export default function HouseholdList({ refreshTrigger }) {
     const apiUrl = process.env.EXPO_PUBLIC_API_URL;
     const [members, setMembers] = useState(defaultMembers);
     const [householdId, setHouseholdId] = useState(null);
@@ -84,7 +84,7 @@ export default function HouseholdList() {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [refreshTrigger]);
 
     const handleSaveHousehold = async ({ name, avatar }) => {
         try {
