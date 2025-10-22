@@ -1,20 +1,23 @@
+import ButtonComponent from "@/components/ButtonComponent";
+import { mapApiTaskToTaskProps, TaskProps } from "@/components/TaskComponent";
+import { Colors } from "@/constants/Colors";
+import Sizes from "@/constants/Sizes";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  View,
+  Alert,
+  Platform,
+  Pressable,
+  StyleSheet,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
-  Pressable,
-  Platform,
   useColorScheme,
+  View,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import Sizes from "@/constants/Sizes";
-import { Colors } from "@/constants/Colors";
-import ButtonComponent from "@/components/ButtonComponent";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 function getXpFromDifficulty(
@@ -48,32 +51,129 @@ const AddTaskScreen = () => {
   const themedStyles = getThemedStyles(theme);
 
   async function handleSaveTask() {
-    const newTask = {
-      repetition: type === "recurring" ? Number(recurringDays) || 1 : 1,
-      deactivated: false,
-      xp: getXpFromDifficulty(difficulty),
-      dueDateStatus: "late",
-      titre: name,
-      dueDate: dueDate ? dueDate.toISOString().split("T")[0] : undefined,
-      done: false,
-    };
+    if (!name.trim()) {
+      Alert.alert("Erreur", "Veuillez donner un nom à la tâche.");
+      return;
+    }
+    if (type === "one-shot" && !dueDate) {
+      Alert.alert("Erreur", "Veuillez choisir une date d'échéance.");
+      return;
+    }
+
     try {
+      const token = await AsyncStorage.getItem("userToken");
+      console.log('token', token);
+      if (!token) {
+        Alert.alert("Erreur d'authentification", "Vous n'êtes pas connecté.");
+        router.replace("/login");
+        return;
+      }
+
+      const repetitionValue =
+        type === "recurring" ? Number(recurringDays) || 1 : 1;
+      const xpValue = getXpFromDifficulty(difficulty);
+
+      const apiPayload = {
+        title: name,
+        description: description || undefined,
+        repetition: repetitionValue,
+        deactivated: false,
+        xp: xpValue,
+        dueDate:
+          type === "one-shot" && dueDate ? dueDate.toISOString() : undefined,
+      };
+      console.log('apiPayload', apiPayload);
+
+      // Si l'utilisateur n'est pas dans un foyer, stocker la tache en local
+      const householdId = await AsyncStorage.getItem("householdId");
+      if (!householdId) {
+        const localTask: TaskProps = {
+          id: Date.now(),
+          repetition: repetitionValue,
+          deactivated: false,
+          xp: xpValue,
+          dueDateStatus: undefined as any,
+          action: () => {},
+          titre: name,
+          dueDate: type === "one-shot" && dueDate ? dueDate.toISOString() : undefined,
+        } as any;
+        const cachedLocal = await AsyncStorage.getItem("tasks_local");
+        let localTasks: TaskProps[] = cachedLocal ? JSON.parse(cachedLocal) : [];
+        localTasks.push(localTask);
+        await AsyncStorage.setItem("tasks_local", JSON.stringify(localTasks));
+        router.back();
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/tasks`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "1",
+          "User-Agent": "MyApp/1.0.0",
+        },
+        body: JSON.stringify(apiPayload),
+      });
+
+      console.log("Response status:", response);
+      if (!response.ok) {
+        // Si refus (par ex. pas dans un foyer), bascule locale
+        if (response.status === 401 || response.status === 403) {
+          const localTask: TaskProps = {
+            id: Date.now(),
+            repetition: repetitionValue,
+            deactivated: false,
+            xp: xpValue,
+            dueDateStatus: undefined as any,
+            action: () => {},
+            titre: name,
+            dueDate: type === "one-shot" && dueDate ? dueDate.toISOString() : undefined,
+          } as any;
+          const cachedLocal = await AsyncStorage.getItem("tasks_local");
+          let localTasks: TaskProps[] = cachedLocal ? JSON.parse(cachedLocal) : [];
+          localTasks.push(localTask);
+          await AsyncStorage.setItem("tasks_local", JSON.stringify(localTasks));
+          router.back();
+          return;
+        }
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Erreur inconnue." }));
+        throw new Error(
+          errorData.message || `Erreur serveur: ${response.status}`
+        );
+      }
+      const responseData = await response.json();
+      const createdTask = mapApiTaskToTaskProps(responseData);
+
       const cached = await AsyncStorage.getItem("tasks");
-      let tasks = [];
+      let tasks: TaskProps[] = [];
       if (cached) {
+        // Conserver le format TaskProps tel que stocké par l'app
         tasks = JSON.parse(cached);
       }
 
-      tasks.push(newTask);
+      tasks.push(createdTask);
       await AsyncStorage.setItem("tasks", JSON.stringify(tasks));
-      router.push("/");
+
+      router.back();
     } catch (e) {
-      console.error("Erreur lors de la sauvegarde de la tâche", e);
+      console.error("Erreur lors de la création de la tâche:", e);
+      Alert.alert(
+        "Échec de la création",
+        e instanceof Error
+          ? e.message
+          : "Une erreur est survenue lors de la sauvegarde."
+      );
     }
   }
 
   return (
-    <View style={themedStyles.container}>
+    <SafeAreaView
+      edges={["left", "right", "bottom"]}
+      style={themedStyles.container}
+    >
       <View style={themedStyles.typeRow}>
         <Pressable
           style={[
@@ -255,14 +355,13 @@ const AddTaskScreen = () => {
         numberOfLines={3}
         placeholderTextColor={theme.secondary}
       />
-
       <ButtonComponent
         type="primary"
         titre="Ajouter la Tâche"
         action={handleSaveTask}
         style={themedStyles.saveButton}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -274,7 +373,6 @@ function getThemedStyles(theme: typeof Colors.light) {
       borderTopLeftRadius: Sizes.CARD_RADIUS_LG,
       borderTopRightRadius: Sizes.CARD_RADIUS_LG,
       padding: Sizes.SPACING_LG,
-      paddingTop: Sizes.SPACING_LG,
     },
     typeRow: {
       flexDirection: "row",

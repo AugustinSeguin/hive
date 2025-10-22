@@ -1,4 +1,5 @@
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { LogBox, Platform } from 'react-native';
@@ -24,21 +25,35 @@ export default function RootLayout() {
     })();
   }, []);
 
+  const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
-        <Stack.Screen name="addTask" options={{ title: 'Nouvelle tâche' }} />
-        <Stack.Screen name="editTask" options={{ title: 'Modifier la tache' }} />
-        <Stack.Screen name="settings" options={{ title: 'Paramètres' }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider value={theme}>
+        <Stack
+          screenOptions={{
+            contentStyle: {
+              backgroundColor: theme.colors.background,
+            },
+          }}
+        >
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="register" options={{ headerShown: false }} />
+
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+          <Stack.Screen
+            name="addTask"
+            options={{ title: "Nouvelle tâche", headerShown: true }}
+          />
+
+          <Stack.Screen name="settings" options={{ title: "Paramètres" }} />
+
+          <Stack.Screen name="+not-found" />
+        </Stack>
+
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
-
-
-

@@ -60,43 +60,44 @@ export default function HomeScreen() {
   const fetchTasks = async () => {
     try {
       const token = await AsyncStorage.getItem("userToken");
-      const householdId = await AsyncStorage.getItem("householdId");
       let tasks: TaskProps[] = [];
-
-      if (!token || !householdId) {
-        const cachedLocal = await AsyncStorage.getItem("tasks_local");
-        tasks = cachedLocal ? JSON.parse(cachedLocal) : [];
-      } else {
-        const response = await fetch(`${API_URL}/tasks`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            "ngrok-skip-browser-warning": "1",
-            "User-Agent": "MyApp/1.0.0",
-          },
-        });
-        if (!response.ok) {
-          if (response.status === 401 || response.status === 403) {
-            const cachedLocal = await AsyncStorage.getItem("tasks_local");
-            tasks = cachedLocal ? JSON.parse(cachedLocal) : [];
-          } else {
-            throw new Error(`Fetch tasks failed: ${response.status}`);
-          }
-        } else {
-          const rawTasks = await response.json();
-          tasks = rawTasks.map((t: any) => ({
-            id: t.id,
-            titre: t.title ?? t.titre ?? "",
-            repetition: t.repetition ?? 1,
-            dueDate: t.dueDate ?? null,
-            deactivated: t.deactivated ?? false,
-            xp: t.xp ?? 0,
-            dueDateStatus: undefined as any,
-            action: () => {},
-          }));
-        }
+      if (!token) {
+        Alert.alert(
+          "Erreur d'authentification",
+          "Token non trouvé. Veuillez vous reconnecter."
+        );
+        return false;
       }
+
+      const response = await fetch(`${API_URL}/tasks`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "1",
+          "User-Agent": "MyApp/1.0.0",
+        },
+      });
+
+      if (!response.ok) {
+        Alert.alert(
+          "OOPS...",
+          "Une erreur est survenue lors de la récupération des tâches."
+        );
+        return false;
+      }
+      const rawTasks = await response.json();
+
+      tasks = rawTasks.map((t: any) => ({
+        id: t.id,
+        titre: t.title ?? t.titre ?? "",
+        repetition: t.repetition ?? 1,
+        dueDate: t.dueDate ?? null,
+        deactivated: t.deactivated ?? false,
+        xp: t.xp ?? 0,
+        dueDateStatus: undefined as any,
+        action: () => {},
+      }));
 
       tasks.sort((a, b) => {
         if (a.dueDate && b.dueDate) {
@@ -117,7 +118,7 @@ export default function HomeScreen() {
       setCurrentWeekTasks(currentWeekTasks);
       setLaterTasks(laterTasks);
       setDeactivatedTasks(deactivatedTasks);
-      if (householdId && token) { if (householdId && token) { await AsyncStorage.setItem("tasks", JSON.stringify(tasks)); } else { await AsyncStorage.setItem("tasks_local", JSON.stringify(tasks)); } } else { await AsyncStorage.setItem("tasks_local", JSON.stringify(tasks)); }
+      await AsyncStorage.setItem("tasks", JSON.stringify(tasks));
     } catch (e) {
       const cached = await AsyncStorage.getItem("tasks");
       if (!cached) return;
@@ -206,9 +207,7 @@ export default function HomeScreen() {
   async function toggleTask(id: number | undefined | null) {
     if (id == null) return;
     try {
-      const householdId = await AsyncStorage.getItem("householdId");
-      const storeKey = householdId ? "tasks" : "tasks_local";
-      const cached = await AsyncStorage.getItem(storeKey);
+      const cached = await AsyncStorage.getItem("tasks");
       if (cached) {
         const tasks = JSON.parse(cached);
         const index = tasks.findIndex((task: any) => task.id === id);
@@ -221,31 +220,30 @@ export default function HomeScreen() {
           const updatedTasks = [...tasks];
           updatedTasks[index] = updatedTask;
 
-          await AsyncStorage.setItem(storeKey, JSON.stringify(updatedTasks));
+          await AsyncStorage.setItem("tasks", JSON.stringify(updatedTasks));
           const token = await AsyncStorage.getItem("userToken");
 
-          // 1) Update task status on server only if in a household
-          if (householdId && token) {
-            await fetch(`${API_URL}/tasks/${id}`, {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: token ? `Bearer ${token}` : "",
-                "ngrok-skip-browser-warning": "1",
-                "User-Agent": "MyApp/1.0.0",
-              },
-              body: JSON.stringify({
-                title: updatedTask.title ?? updatedTask.titre,
-                repetition: updatedTask.repetition,
-                dueDate: updatedTask.dueDate,
-                deactivated: updatedTask.deactivated,
-                xp: updatedTask.xp,
-              }),
-            });
-          }
+          // 1) Update task status (deactivated flag) on server
+          await fetch(`${API_URL}/tasks/${id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : "",
+              "ngrok-skip-browser-warning": "1",
+              "User-Agent": "MyApp/1.0.0",
+            },
+            // Do not allow client to change householdId
+            body: JSON.stringify({
+              title: updatedTask.title ?? updatedTask.titre,
+              repetition: updatedTask.repetition,
+              dueDate: updatedTask.dueDate,
+              deactivated: updatedTask.deactivated,
+              xp: updatedTask.xp,
+            }),
+          });
 
           // 2) If marking as completed, record completion to award points to current user
-          if (updatedTask.deactivated === true && householdId && token) {
+          if (updatedTask.deactivated === true) {
             try {
               await fetch(`${API_URL}/tasks/${id}/complete`, {
                 method: "POST",
@@ -305,7 +303,5 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
 });
-
-
 
 

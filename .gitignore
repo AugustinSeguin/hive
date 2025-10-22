@@ -40,3 +40,5 @@ app-example
 
 # env vars
 .env
+
+package-lock.json
