@@ -22,7 +22,7 @@ const DEFAULT_DATA = [
     { id: '4', name: 'Tim', points: 1200, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Tim' },
 ];
 
-export default function RankingComponent() {
+export default function RankingComponent({ refreshTrigger }) {
     const theme = Colors['light'];
 
     const [ranking, setRanking] = useState(DEFAULT_DATA);
@@ -78,6 +78,10 @@ export default function RankingComponent() {
                 setLoading(false);
             }
         };
+
+        useEffect(() => {
+            fetchRanking();
+        }, [refreshTrigger]);
 
         fetchRanking();
     }, []);
