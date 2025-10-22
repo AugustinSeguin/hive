@@ -13,7 +13,7 @@ import { Colors } from '@/constants/Colors';
 import Sizes from '@/constants/Sizes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 const DEFAULT_DATA = [
     { id: '1', name: 'Lisa', points: 1420, avatar: 'https://api.dicebear.com/7.x/adventurer/png?seed=Lisa' },
